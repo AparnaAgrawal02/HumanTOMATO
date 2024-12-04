@@ -25,6 +25,10 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+src/tomato_represenation/new_joints/
+src/tomato_represenation/new_joints.rar
+src/tomato_represenation/body_models/
+src/tomato_represenation/motion_data/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
