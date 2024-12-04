@@ -37,6 +37,7 @@ class BASEDataModule(pl.LightningDataModule):
             self.cfg.DATASET.VERSION,
             self.cfg.EVAL.SPLIT + ".txt",
         )
+        print(f"Loading {self.name} dataset from {split_file}")
         # import pdb; pdb.set_trace()
         return self.Dataset(split_file=split_file, **sample_params)
 
@@ -74,7 +75,7 @@ class BASEDataModule(pl.LightningDataModule):
         return DataLoader(
             self.train_dataset,
             shuffle=True,
-            persistent_workers=True,
+            #persistent_workers=True,
             **self.dataloader_options,
         )
 
@@ -85,7 +86,7 @@ class BASEDataModule(pl.LightningDataModule):
         dataloader_options["shuffle"] = False
         return DataLoader(
             self.test_dataset,
-            persistent_workers=True,
+           # persistent_workers=True,
             **dataloader_options,
         )
 
@@ -98,7 +99,7 @@ class BASEDataModule(pl.LightningDataModule):
 
         return DataLoader(
             self.val_dataset,
-            persistent_workers=True,
+            #persistent_workers=True,
             **dataloader_options,
         )
 
@@ -111,6 +112,6 @@ class BASEDataModule(pl.LightningDataModule):
         dataloader_options["shuffle"] = False
         return DataLoader(
             self.test_dataset,
-            persistent_workers=True,
+          #  persistent_workers=True,
             **dataloader_options,
         )

@@ -58,7 +58,16 @@ def findAllFile(base):
             file_path.append(fullname)
     return file_path
 
-
+def findSignlanguegeFiles(base):
+    file_paths = []
+    for gloss in os.listdir(base):
+        gloss_path = os.path.join(base, gloss)
+        for dir1 in os.listdir(gloss_path):
+            dir1_path = os.path.join(gloss_path, dir1)
+            file = os.path.join(dir1_path, "smplx_322","smplx_322.npy")
+            if os.path.exists(file):
+                file_paths.append(file)
+    return file_paths
 def collate_tensors(batch):
     # Function for collating a batch of PyTorch tensors
     dims = batch[0].dim()
@@ -96,8 +105,9 @@ class MotionDatasetV2(data.Dataset):
         self.lengths = []
 
         # Finding all files in the specified directory
-        self.id_list = findAllFile(root_path)
-
+        
+        #self.id_list = findAllFile(root_path)
+        self.id_list = findSignlanguegeFiles(root_path)
         # Limiting the number of files for debugging purposes
         if debug:
             self.id_list = self.id_list[:100]

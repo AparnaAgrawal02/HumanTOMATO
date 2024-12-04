@@ -140,8 +140,8 @@ def plot_3d_motion(joints, out_name, title, kinematic_chain, figsize=(10, 10), f
 
         init()
 
-        ax.lines = []
-        ax.collections = []
+        #ax.lines = []
+        #ax.collections = []
         ax.view_init(elev=110, azim=-90)
         ax.dist = 7.5
         #         ax =
@@ -231,6 +231,8 @@ def plot_3d_motion_smplh(joints, out_name, title, kinematic_chain, figsize=(10, 
     data[..., 2] -= data[:, 0:1, 2]
 
     def update(index):
+         
+    
 
         def init():
             ax.set_xlim(-limits, limits)
@@ -256,11 +258,33 @@ def plot_3d_motion_smplh(joints, out_name, title, kinematic_chain, figsize=(10, 
             fig.suptitle(wraped_title, fontsize=16)
         ax = p3.Axes3D(fig, auto_add_to_figure=False)
         fig.add_axes(ax)
+            # Add axis labels
+        ax.set_xlabel('X (Right/Left)')
+        ax.set_ylabel('Y (Up/Down)') 
+        ax.set_zlabel('Z (Forward/Backward)')
+        
+        # Add facing direction arrow
+        # Get front direction from skeleton (using hips)
+        hip_left = data[index, 1]  # Adjust index based on your skeleton
+        hip_right = data[index, 2] # Adjust index based on your skeleton
+        facing_dir = hip_right - hip_left
+        facing_dir = facing_dir / np.linalg.norm(facing_dir)
+        
+        # Draw arrow indicating facing direction
+        arrow_start = np.array([0, 0, 0])  # Center point
+        arrow_end = arrow_start + facing_dir * limits/2
+        ax.quiver(arrow_start[0], arrow_start[1], arrow_start[2],
+                facing_dir[0], facing_dir[1], facing_dir[2],
+                length=limits/2, color='green', label='Facing Direction')
+        
+        # Add legend
+        ax.legend()
+
 
         init()
 
-        ax.lines = []
-        ax.collections = []
+        #ax.lines = []
+        #ax.collections = []
         ax.view_init(elev=110, azim=-90)
         ax.dist = 7.5
 
@@ -280,7 +304,7 @@ def plot_3d_motion_smplh(joints, out_name, title, kinematic_chain, figsize=(10, 
             ax.plot3D(data[index, chain, 0], data[index, chain, 1], data[index, chain, 2], linewidth=linewidth,
                       color=color)
 
-        plt.axis('off')
+        #plt.axis('off')
         ax.set_xticklabels([])
         ax.set_yticklabels([])
         ax.set_zticklabels([])
@@ -357,9 +381,9 @@ def draw_to_batch_smplh_folder(kinematic_chain, input_folder):
 
 if __name__ == '__main__':
     # Visualize your final data, please define your example_path, like 'new_data_humanml_000067_joints_using_smplx_rotation.npy'
-    example_path = None
+    example_path = "/scratch/aparna/BSL_t2m_test/ALIR/a_005_073_000_ALIR/new_joints/smplx_322.npy"
     assert example_path != None
-    joints = np.load(example)
+    joints = np.load("/scratch/aparna/BSL_t2m_test/ALIR/a_005_073_000_ALIR/joint/smplx_322.npy")
 
     # 2*3*5=30, left first, then right
     hand_joints_id = [i for i in range(25, 55)]

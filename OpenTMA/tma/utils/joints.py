@@ -62,6 +62,30 @@ motionx_joints = [
     "RW",
     "LW",
 ]
+bsl_joints = [
+    "root",
+    "RH",
+    "LH",
+    "BP",
+    "RK",
+    "LK",
+    "BT",
+    "RMrot",
+    "LMrot",
+    "BLN",
+    "RF",
+    "LF",
+    "BMN",
+    "RSI",
+    "LSI",
+    "BUN",
+    "RS",
+    "LS",
+    "RE",
+    "LE",
+    "RW",
+    "LW",
+]
 
 humanml3d_joints = [
     "root",

@@ -1,12 +1,12 @@
-FOLDER: './experiments' # Experiment files saving path
+FOLDER: '/scratch/aparna/experiments' # Experiment files saving path
 
 TEST:
-  FOLDER: './results' # Testing files saving path
+  FOLDER: '/scratch/aparna/results' # Testing files saving path
 
 DATASET:
-  SMPL_PATH: './deps/smpl'
-  TRANSFORM_PATH: './deps/transforms/'
-  WORD_VERTILIZER_PATH: './deps/glove/'
+  SMPL_PATH: '/scratch/aparna/deps/smpl'
+  TRANSFORM_PATH: '/scratch/aparna/deps/transforms/'
+  WORD_VERTILIZER_PATH: '/scratch/aparna/deps/glove/'
   UNIMOCAP:
     ROOT: './datasets/UniMocap' # KIT directory
     SPLIT_ROOT: './datasets/UniMocap' # KIT splits directory
@@ -29,12 +29,18 @@ DATASET:
     SPLIT_ROOT: ./datasets/Motion-X/split
     SEMANTIC_TEXT_ROOT: ./datasets/Motion-X/texts/semantic_texts
     FACE_TEXT_ROOT: ./datasets/Motion-X/texts/face_texts
+  
+  BSL:
+    ROOT: /scratch/aparna/BSL_t2m_test_ready
+    SPLIT_ROOT: /scratch/aparna/BSL_t2m_test_ready
+    SEMANTIC_TEXT_ROOT: /scratch/aparna/BSL_t2m_test_ready/texts/semantic_texts
+    FACE_TEXT_ROOT: /scratch/aparna/BSL_t2m_test_ready/texts/face
 
 
 model:
-  bert_path: './deps/distilbert-base-uncased' # bert model path for all text encoders
-  clip_path: './deps/clip-vit-large-patch14' # bert model path for all text encoders
-  t2m_path: './deps/t2m/'
+  bert_path: '/scratch/aparna/deps/distilbert-base-uncased' # bert model path for all text encoders
+  clip_path: '/scratch/aparna/deps/clip-vit-large-patch14' # bert model path for all text encoders
+  t2m_path: '/scratch/aparna/deps/t2m/'
 
   humanact12_rec_path: './deps/actionrecognition'
   uestc_rec_path: './deps/actionrecognition'

@@ -79,6 +79,7 @@ def recover_from_ric(data, joints_num):
 # foot contact (B, seq_len, 4)
 def recover_root_rot_pos(data):
     rot_vel = data[..., 0]
+    #print(rot_vel.shape)
     r_rot_ang = torch.zeros_like(rot_vel).to(data.device)
     '''Get Y-axis rotation from rotation velocity'''
     r_rot_ang[..., 1:] = rot_vel[..., :-1]
@@ -99,13 +100,31 @@ def recover_root_rot_pos(data):
     return r_rot_quat, r_pos
 
 
+
+
 def plot_3d_motion_smplh(joints, out_name, title, kinematic_chain, figsize=(10, 10), fps=120, radius=4):
+    """
+    Plot 3D motion data of SMPL-H model.
+
+    Parameters:
+    - joints (numpy array): 3D motion data of joints, shape (frame_number, joint_number, 3).
+    - out_name (str or None): If specified, save the plot to this file path. If None, return the plot as a tensor.
+    - title (str or None): Title of the plot.
+    - kinematic_chain (list): List defining the kinematic chain of joints.
+    - figsize (tuple): Size of the figure in inches.
+    - fps (int): Frames per second for the animation.
+    - radius (int): Radius of the joint markers.
+
+    Returns:
+    - If out_name is None, returns the plot as a tensor.
+    - If out_name is specified, saves the plot and returns None.
+    """
     matplotlib.use('Agg')
     data = joints.copy().reshape(len(joints), -1, 3)
-    
+
     nb_joints = joints.shape[1]
     smpl_kinetic_chain = kinematic_chain
-    # limits = 1000 if nb_joints == 21 else 2
+
     limits = 2
     MINS = data.min(axis=0).min(axis=0)
     MAXS = data.max(axis=0).max(axis=0)
@@ -122,14 +141,17 @@ def plot_3d_motion_smplh(joints, out_name, title, kinematic_chain, figsize=(10, 
     data[..., 2] -= data[:, 0:1, 2]
 
     def update(index):
+         
+    
 
         def init():
             ax.set_xlim(-limits, limits)
             ax.set_ylim(-limits, limits)
             ax.set_zlim(0, limits)
             ax.grid(b=False)
+
         def plot_xzPlane(minx, maxx, miny, minz, maxz):
-            ## Plot a plane XZ
+            # Plot a plane XZ
             verts = [
                 [minx, miny, minz],
                 [minx, miny, maxz],
@@ -139,62 +161,81 @@ def plot_3d_motion_smplh(joints, out_name, title, kinematic_chain, figsize=(10, 
             xz_plane = Poly3DCollection([verts])
             xz_plane.set_facecolor((0.5, 0.5, 0.5, 0.5))
             ax.add_collection3d(xz_plane)
-        # fig = plt.figure(figsize=(480/96., 320/96.), dpi=96) if nb_joints == 21 else plt.figure(figsize=(10, 10), dpi=96)
+
         fig = plt.figure(figsize=(10, 10), dpi=96)
-        if title is not None :
+        if title is not None:
             wraped_title = '\n'.join(wrap(title, 40))
             fig.suptitle(wraped_title, fontsize=16)
-        ax = p3.Axes3D(fig)
+        ax = p3.Axes3D(fig, auto_add_to_figure=False)
+        fig.add_axes(ax)
+            # Add axis labels
+        ax.set_xlabel('X (Right/Left)')
+        ax.set_ylabel('Y (Up/Down)') 
+        ax.set_zlabel('Z (Forward/Backward)')
         
+        # Add facing direction arrow
+        # Get front direction from skeleton (using hips)
+        hip_left = data[index, 1]  # Adjust index based on your skeleton
+        hip_right = data[index, 2] # Adjust index based on your skeleton
+        facing_dir = hip_right - hip_left
+        facing_dir = facing_dir / np.linalg.norm(facing_dir)
+        
+        # Draw arrow indicating facing direction
+        arrow_start = np.array([0, 0, 0])  # Center point
+        arrow_end = arrow_start + facing_dir * limits/2
+        ax.quiver(arrow_start[0], arrow_start[1], arrow_start[2],
+                facing_dir[0], facing_dir[1], facing_dir[2],
+                length=limits/2, color='green', label='Facing Direction')
+        
+        # Add legend
+        ax.legend()
+
+
         init()
-        
-        ax.lines = []
-        ax.collections = []
+
+        #ax.lines = []
+        #ax.collections = []
         ax.view_init(elev=110, azim=-90)
         ax.dist = 7.5
-        #         ax =
+
         plot_xzPlane(MINS[0] - trajec[index, 0], MAXS[0] - trajec[index, 0], 0, MINS[2] - trajec[index, 1],
                      MAXS[2] - trajec[index, 1])
-        #         ax.scatter(data[index, :22, 0], data[index, :22, 1], data[index, :22, 2], color='black', s=3)
 
         if index > 1:
             ax.plot3D(trajec[:index, 0] - trajec[index, 0], np.zeros_like(trajec[:index, 0]),
                       trajec[:index, 1] - trajec[index, 1], linewidth=1.0,
                       color='blue')
-        #             ax = plot_xzPlane(ax, MINS[0], MAXS[0], 0, MINS[2], MAXS[2])
 
         for i, (chain, color) in enumerate(zip(smpl_kinetic_chain, colors)):
-            #             print(color)
             if i < 5:
                 linewidth = 4.0
             else:
                 linewidth = 2.0
             ax.plot3D(data[index, chain, 0], data[index, chain, 1], data[index, chain, 2], linewidth=linewidth,
                       color=color)
-        #         print(trajec[:index, 0].shape)
 
-        plt.axis('off')
+        #plt.axis('off')
         ax.set_xticklabels([])
         ax.set_yticklabels([])
         ax.set_zticklabels([])
-    
-        if out_name is not None : 
+
+        if out_name is not None:
             plt.savefig(out_name, dpi=96)
             plt.close()
-            
-        else : 
+
+        else:
             io_buf = io.BytesIO()
             fig.savefig(io_buf, format='raw', dpi=96)
             io_buf.seek(0)
             # print(fig.bbox.bounds)
             arr = np.reshape(np.frombuffer(io_buf.getvalue(), dtype=np.uint8),
-                                newshape=(int(fig.bbox.bounds[3]), int(fig.bbox.bounds[2]), -1))
+                             newshape=(int(fig.bbox.bounds[3]), int(fig.bbox.bounds[2]), -1))
             io_buf.close()
             plt.close()
             return arr
 
     out = []
-    for i in range(frame_number) : 
+    for i in range(frame_number):
         out.append(update(i))
     out = np.stack(out, axis=0)
     return torch.from_numpy(out)
@@ -207,18 +248,22 @@ def draw_to_batch_smplh(smpl_joints_batch, kinematic_chain, title_batch=None, ou
     for i in range(batch_size) : 
         out.append(plot_3d_motion_smplh(smpl_joints_batch[i], None, title_batch[i] if title_batch is not None else None, kinematic_chain))
         if outname is not None:
+            print(out[-1].shape)
             imageio.mimsave(outname[i], np.array(out[-1]), fps=20)
     out = torch.stack(out, axis=0)
+    print(out.shape)
     return out
 
 
 
 if __name__ == '__main__':
     # load your own 623-dim vector file here
-    example_path = ''
+    example_path = '/scratch/aparna/BSL_t2m_test/ALIR/a_005_073_000_ALIR/new_joint_vecs/smplx_322.npy'
     features = torch.from_numpy(np.load(example_path))
+    print(features.shape)
     # global_postion = features
     global_postion = recover_from_ric(features, 52).detach().cpu().numpy()
+    print(global_postion.shape)
     hand_joints_id = [i for i in range(25,55)] # 2*3*5=30, left first, then right
     body_joints_id = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21] #22 joints
 
@@ -230,6 +275,8 @@ if __name__ == '__main__':
     if global_postion.shape[1] != 52:
         global_postion = global_postion[:, body_joints_id+hand_joints_id, :]
     xyz = global_postion.reshape(1, -1, 52, 3)
-
+    print(xyz.shape,"xyzzz")
+    # rpreference1_1 = np.load('/scratch/aparna/BSL_t2m_test/ALIR/a_005_073_000_ALIR/new_joint_vecs/smplx_322.npy')
+    # reference2_1 = np.load('/scratch/aparna/BSL_t2m_test/ALIR/a_005_073_000_ALIR/new_joints/smplx_322.npy')
     # feel free to change the output name
     pose_vis = draw_to_batch_smplh(xyz, t2m_body_hand_kinematic_chain, title_batch=None, outname=[f'output_2.gif'])

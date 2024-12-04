@@ -81,6 +81,9 @@ class DistilbertEncoderBase(pl.LightningModule):
         Outputs: None
         """
         # Tokenize the texts and convert them to tensors
+        print(texts,'texttttttttttts')
+        if len(texts)==1:
+            texts = texts[0]['caption']
         encoded_inputs = self.tokenizer(texts, return_tensors="pt", padding=True)
 
         # Pass the encoded inputs to the DistilBERT model

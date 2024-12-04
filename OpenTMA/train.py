@@ -87,6 +87,7 @@ def main():
 
     # create model
     model = get_model(cfg, datasets[0])
+    print(model)
     logger.info("model {} loaded".format(cfg.model.model_type))
 
     # Define metrics to monitor

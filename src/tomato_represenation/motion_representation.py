@@ -52,7 +52,8 @@ from paramUtil import *
 import torch
 from tqdm import tqdm
 import os
-
+from plot_script import plot_3d_motion
+from matplotlib import pyplot as plt
 
 def findAllFile(base):
     """
@@ -71,6 +72,18 @@ def findAllFile(base):
             file_path.append(fullname)
     return file_path
 
+def findSignlanguegeFiles(base):
+    file_paths = []
+    for gloss in os.listdir(base):
+        gloss_path = os.path.join(base, gloss)
+        if not os.path.isdir(gloss_path):
+            continue
+        for dir1 in os.listdir(gloss_path):
+            dir1_path = os.path.join(gloss_path, dir1)
+            file = os.path.join(dir1_path, "joint","smplx_322.npy")
+            if os.path.exists(file):
+                file_paths.append(file)
+    return file_paths
 
 def uniform_skeleton(positions, target_offset):
     """
@@ -131,6 +144,7 @@ def process_file(positions, feet_thre):
     
     # Put the skeleton on the floor by subtracting the minimum height
     floor_height = positions.min(axis=0).min(axis=0)[1]
+    print(floor_height,"floor_height")
     positions[:, :, 1] -= floor_height
 
     # Center the skeleton at the origin in the XZ plane
@@ -153,7 +167,7 @@ def process_file(positions, feet_thre):
         np.sqrt((forward_init ** 2).sum(axis=-1))[..., np.newaxis]
 
     # Calculate quaternion for root orientation
-    target = np.array([[0, 0, 1]])
+    target = np.array([[0, 0, -1]])
     root_quat_init = qbetween_np(forward_init, target)
     root_quat_init = np.ones(positions.shape[:-1] + (4,)) * root_quat_init
 
@@ -165,14 +179,14 @@ def process_file(positions, feet_thre):
     global_positions = positions.copy()
 
     # You can try to visualize it!
-    # plot_3d_motion("./positions_2.mp4", kinematic_chain, positions, 'title', fps=20)
+    # plot_3d_motion("./positions_2.png", positions, 'title', fps=20,kinematic_tree=kinematic_chain)
     # plt.plot(positions_b[:, 0, 0], positions_b[:, 0, 2], marker='*')
     # plt.plot(positions[:, 0, 0], positions[:, 0, 2], marker='o', color='r')
     # plt.xlabel('x')
     # plt.ylabel('z')
     # plt.axis('equal')
     # plt.show()
-
+    # exit()
     """ Get Foot Contacts """
 
     def foot_detect(positions, thres):
@@ -305,25 +319,26 @@ def process_file(positions, feet_thre):
 
     # Get Joint Rotation Representation
     # (seq_len, (joints_num-1) *6) quaternion for skeleton joints
-    rot_data = cont_6d_params[:, 1:].reshape(len(cont_6d_params), -1)
-
+    #rot_data = cont_6d_params[:, 1:].reshape(len(cont_6d_params), -1)
+    #print(rot_data.shape)   
     # Get Joint Rotation Invariant Position Represention
     # (seq_len, (joints_num-1)*3) local joint position
     ric_data = positions[:, 1:].reshape(len(positions), -1)
-
+    print(ric_data.shape)
     # Get Joint Velocity Representation
     # (seq_len-1, joints_num*3)
     local_vel = qrot_np(np.repeat(r_rot[:-1, None], global_positions.shape[1], axis=1),
                         global_positions[1:] - global_positions[:-1])
     local_vel = local_vel.reshape(len(local_vel), -1)
-
+    print(local_vel.shape)
     # Concatenate all features into a single array
+    print(root_data.shape)
     data = root_data
     data = np.concatenate([data, ric_data[:-1]], axis=-1)
-    data = np.concatenate([data, rot_data[:-1]], axis=-1)
+   # data = np.concatenate([data, rot_data[:-1]], axis=-1)
     data = np.concatenate([data, local_vel], axis=-1)
-    data = np.concatenate([data, feet_l, feet_r], axis=-1)
-
+    #data = np.concatenate([data, feet_l, feet_r], axis=-1)
+    print(data.shape)
     return data, global_positions, positions, l_velocity
 
 
@@ -465,21 +480,23 @@ if __name__ == "__main__":
     # ds_num = 8
 
     # change your motion_data joint
-    data_dir = 'motion_data/joint'
+    data_dir = '/scratch/aparna/BSL_t2m_test/'
     # change your save folder
-    save_dir1 = 'motion_data/new_joints/'
-    # change your save folder
-    save_dir2 = 'motion_data/new_joint_vecs/'
+    # save_dir1 = 'motion_data/new_joints/'
+    # # change your save folder
+    # save_dir2 = 'motion_data/new_joint_vecs/'
 
-    os.makedirs(save_dir1, exist_ok=True)
-    os.makedirs(save_dir2, exist_ok=True)
+    # os.makedirs(save_dir1, exist_ok=True)
+    # os.makedirs(save_dir2, exist_ok=True)
 
     n_raw_offsets = torch.from_numpy(t2m_raw_offsets)
     kinematic_chain = t2m_body_hand_kinematic_chain
 
     # Get offsets of target skeleton
     # we random choose one
-    example_data = np.load('motion_data/joint/humanml/000021.npy')
+    example_data = np.load('/scratch/aparna/BSL_t2m_test/ALIR/a_005_073_000_ALIR/joint/smplx_322.npy')
+   # print(example_data.shape)
+    #print(body_joints_id + hand_joints_id)
     example_data = example_data[:, body_joints_id + hand_joints_id, :]
     example_data = example_data.reshape(len(example_data), -1, 3)
     example_data = torch.from_numpy(example_data)
@@ -490,14 +507,15 @@ if __name__ == "__main__":
     # tgt_offsets is the 000021 skeleton bone lengths with the predefined offset directions. global postion offsets
     tgt_offsets = tgt_skel.get_offsets_joints(example_data[0])
 
-    source_list = findAllFile(data_dir)
+    source_list = findSignlanguegeFiles(data_dir)
     frame_num = 0
     for source_file in tqdm(source_list):
 
-        source_data = np.load(source_file)[:, body_joints_id+hand_joints_id, :]
-        try:
+            source_data = np.load(source_file)[:, body_joints_id+hand_joints_id, :]
+       #try:
             data, ground_positions, positions, l_velocity = process_file(
                 source_data, 0.002)
+            #print(ground_positions)
             rec_ric_data = recover_from_ric(torch.from_numpy(
                 data).unsqueeze(0).float(), joints_num)
 
@@ -509,9 +527,9 @@ if __name__ == "__main__":
                     rec_ric_data.squeeze().numpy())
             np.save(source_file.replace('joint', 'new_joint_vecs'), data)
             frame_num += data.shape[0]
-        except Exception as e:
-            print(source_file)
-            print(e)
+        # except Exception as e:
+        #     print(source_file)
+        #     print(e)
 
     print('Total clips: %d, Frames: %d, Duration: %fm' %
           (len(source_list), frame_num, frame_num / 20 / 60))

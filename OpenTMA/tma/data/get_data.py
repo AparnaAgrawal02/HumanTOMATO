@@ -12,13 +12,14 @@ from .Uestc import UestcDataModule
 from .UniMocap import UniMocapDataModule
 from .utils import *
 from .MotionX import Motion_XDataModule
+from .BSL import BSL_DataModule
 
 
 def get_mean_std(phase, cfg, dataset_name):
 
     # todo: use different mean and val for phases
     name = "t2m" if dataset_name == "humanml3d" else dataset_name
-    assert name in ["t2m", "kit", "motionx", "unimocap"]
+    assert name in ["t2m", "kit", "motionx", "unimocap","BSL"]
     # if phase in ["train", "val", "test"]:
     if name in ["t2m", "kit"]:
         if phase in ["val"]:
@@ -68,6 +69,53 @@ def get_mean_std(phase, cfg, dataset_name):
                     "std.npy",
                 )
             )
+    
+    elif name in ["BSL"]:
+
+        if phase in ["val"]:
+            data_root = pjoin(
+                cfg.model.t2m_path,
+                name,
+                # cfg.DATASET.VERSION,
+                # cfg.DATASET.MOTION_TYPE,
+                # "Decomp_SP001_SM001_H512",
+                # "meta",
+            )
+            print("data_root",data_root)
+            mean = np.load(pjoin(data_root, "mean.npy"))
+            std = np.load(pjoin(data_root, "std.npy"))
+            print("mean",mean.shape)
+            print("std",std.shape)
+
+        else:
+            data_root = eval(f"cfg.DATASET.{dataset_name.upper()}.ROOT")
+            mean = np.load(
+                pjoin(
+                    data_root,
+                    "mean_std",
+                    cfg.DATASET.VERSION,
+                    cfg.DATASET.MOTION_TYPE,
+                    "mean.npy",
+                )
+            )
+            std = np.load(
+                pjoin(
+                    data_root,
+                    "mean_std",
+                    cfg.DATASET.VERSION,
+                    cfg.DATASET.MOTION_TYPE,
+                    "std.npy",
+                )
+            )
+            print(pjoin(
+                    data_root,
+                    "mean_std",
+                    cfg.DATASET.VERSION,
+                    cfg.DATASET.MOTION_TYPE,
+                    "mean.npy",
+                ))
+            print("mean",mean.shape)
+            print("std",std.shape)
 
     elif name in ["unimocap"]:
         if phase in ["val"]:
@@ -91,6 +139,8 @@ def get_njoints(dataset_name):
         njoints = 22
     elif dataset_name == "kit":
         njoints = 21
+    elif dataset_name == "motionx" or dataset_name == "bsl":
+        njoints = 52
     else:
         raise NotImplementedError
 
@@ -163,7 +213,7 @@ def reget_mean_std(cfg, dataset_name, mean, std):
 def get_WordVectorizer(cfg, phase, dataset_name):
     # import pdb; pdb.set_trace()
     if phase not in ["text_only"]:
-        if dataset_name.lower() in ["unimocap", "motionx", "humanml3d", "kit"]:
+        if dataset_name.lower() in ["unimocap", "motionx", "humanml3d", "kit","bsl"]:
             if cfg.model.eval_text_source == "token":
                 return WordVectorizer(
                     cfg.DATASET.WORD_VERTILIZER_PATH,
@@ -183,7 +233,7 @@ def get_WordVectorizer(cfg, phase, dataset_name):
 
 
 def get_collate_fn(name, cfg, phase="train"):
-    if name.lower() in ["humanml3d", "kit", "motionx", "unimocap"]:
+    if name.lower() in ["humanml3d", "kit", "motionx", "unimocap", "BSL"]:
         if cfg.model.condition in [
             "text_all",
             "text_face",
@@ -209,12 +259,14 @@ dataset_module_map = {
     "uestc": UestcDataModule,
     "motionx": Motion_XDataModule,
     "unimocap": UniMocapDataModule,
+    'bsl': BSL_DataModule,
 }
 motion_subdir = {
     "unimocap": "new_joint_vecs",
     "humanml3d": "new_joint_vecs",
     "kit": "new_joint_vecs",
     "motionx": "motion_data",
+    "bsl": "new_joint_vecs",
 }
 
 
@@ -310,7 +362,7 @@ def get_datasets(cfg, logger=None, phase="train"):
             # todo: add amass dataset
             raise NotImplementedError
 
-        elif dataset_name.lower() in ["motionx"]:
+        elif dataset_name.lower() in ["motionx", "bsl"]:
             data_root = eval(f"cfg.DATASET.{dataset_name.upper()}.ROOT")
             # get mean and std corresponding to dataset
             mean, std = get_mean_std(phase, cfg, dataset_name)
@@ -334,7 +386,7 @@ def get_datasets(cfg, logger=None, phase="train"):
                 semantic_text_dir=cfg.DATASET.MOTIONX.SEMANTIC_TEXT_ROOT,
                 face_text_dir=cfg.DATASET.MOTIONX.FACE_TEXT_ROOT,
                 condition=cfg.model.condition,
-                motion_dir=pjoin(data_root, motion_subdir[dataset_name]),
+                motion_dir=pjoin(data_root, motion_subdir[dataset_name.lower()]),
                 dataset_name=dataset_name,
                 eval_text_encode_way=cfg.model.eval_text_encode_way,
                 text_source=cfg.DATASET.TEXT_SOURCE,

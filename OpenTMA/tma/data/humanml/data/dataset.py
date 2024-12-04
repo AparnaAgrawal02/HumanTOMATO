@@ -1315,6 +1315,332 @@ class Text2MotionDatasetMotionX(data.Dataset):
         return word_embeddings, pos_one_hots, caption, sent_len, motion, m_length, '_'.join(tokens), retrieval_name
 
 
+'''For BSL'''
+class Text2MotionDatasetMotionX(data.Dataset):
+    def __init__(
+        self,
+        mean,
+        std,
+        split_file,
+        w_vectorizer,
+        max_motion_length,
+        min_motion_length,
+        max_text_len,
+        unit_length,
+        motion_dir,
+        semantic_text_dir,
+        face_text_dir,
+        condition,
+        dataset_name,
+        eval_text_encode_way, 
+        text_source, 
+        motion_type, 
+        tiny=False,
+        debug=False,
+        progress_bar=True,
+        **kwargs):
+        
+        
+        self.w_vectorizer = w_vectorizer
+        self.max_length = 20
+        self.pointer = 0
+        self.max_motion_length = max_motion_length
+        self.max_text_len = max_text_len
+        self.dataset_name = dataset_name
+        self.text_source = text_source
+        self.eval_text_encode_way = eval_text_encode_way
+        self.unit_length = unit_length
+
+        if eval_text_encode_way == 'clip':
+            text_enc, clip_preprocess = clip.load("ViT-B/32", device=opt.device, jit=False)  # Must set jit=False for training
+            clip.model.convert_weights(text_enc)# Actually this line is unnecessary since clip by default already on float16
+            self.tokenizer = clip.tokenize
+            text_enc.eval()
+            for p in text_enc.parameters():
+                p.requires_grad = False
+            self.text_enc = text_enc
+
+        elif eval_text_encode_way == 't5':
+            os.environ["TOKENIZERS_PARALLELISM"] = "false"
+            text_enc = SentenceTransformer('sentence-transformers/sentence-t5-xl').to(opt.device)
+            text_enc.eval()
+            for p in text_enc.parameters():
+                p.requires_grad = False
+            self.text_enc = text_enc
+
+
+        if dataset_name =='t2m' or dataset_name =='motionx':
+            min_motion_len = 40 
+        else:
+            min_motion_len = 24
+
+
+        data_dict = {}
+        id_list = []
+
+        with cs.open(split_file, 'r') as f:
+            for line in f.readlines():
+                id_list.append(line.strip())
+
+        if tiny or debug:
+            progress_bar = False
+            maxdata = 10 if tiny else 100
+        else:
+            maxdata = 1e10
+        
+        if progress_bar:
+            enumerator = enumerate(
+                track(
+                    id_list,
+                    f"Loading {self.dataset_name} {split_file.split('/')[-1].split('.')[0]}",
+                ))
+        else:
+            enumerator = enumerate(id_list)
+
+        
+        count = 0
+        new_name_list = []
+        length_list = []
+        for i, name in enumerator:
+            if count > maxdata:
+                break
+            
+            # try:
+            motion = np.load(pjoin(motion_dir, name + '.npy'))
+            if (len(motion)) < min_motion_len:
+                continue
+            elif len(motion) >= self.max_motion_length:
+                start = random.randint(0,len(motion) - self.max_motion_length)
+                motion = motion[start:start+self.max_motion_length]
+            text_data = []
+            flag = False
+            with cs.open(pjoin("/scratch/aparna/BSL_t2m_test_ready/texts", name + '.txt')) as f:
+                for line in f.readlines():
+                    print(name,"name")
+                    if 'humanml' in name:
+                        if text_source == 'token':
+                            text_dict = {}
+                            line_split = line.strip().split('#')
+                            caption = line_split[0]
+                            tokens = line_split[1].split(' ')
+                            f_tag = float(line_split[2])
+                            to_tag = float(line_split[3])
+                            f_tag = 0.0 if np.isnan(f_tag) else f_tag
+                            to_tag = 0.0 if np.isnan(to_tag) else to_tag
+
+                            text_dict['caption'] = caption
+                            text_dict['tokens'] = tokens
+                            if f_tag == 0.0 and to_tag == 0.0:
+                                flag = True
+                                text_data.append(text_dict)
+                            else:
+                                try:
+                                    n_motion = motion[int(f_tag*20) : int(to_tag*20)]
+                                    if (len(n_motion)) < min_motion_len or (len(n_motion) >= 200):
+                                        continue
+                                    new_name = random.choice('ABCDEFGHIJKLMNOPQRSTUVW') + '_' + name
+                                    while new_name in data_dict:
+                                        new_name = random.choice('ABCDEFGHIJKLMNOPQRSTUVW') + '_' + name
+                                    data_dict[new_name] = {'motion': n_motion,
+                                                        'length': len(n_motion),
+                                                        'text':[text_dict]}
+                                    new_name_list.append(new_name)
+                                    length_list.append(len(n_motion))
+                                except:
+                                    print(line_split)
+                                    print(line_split[2], line_split[3], f_tag, to_tag, name)
+                                    # break
+                        elif text_source in ['only_text_token',  'caption']:
+                            
+                            text_dict = {}
+                            line_split = line.strip().split('#')
+                            caption = line_split[0]
+                            tokens = [i.split('/')[0] for i in line_split[1].split(' ')]
+                            f_tag = float(line_split[2])
+                            to_tag = float(line_split[3])
+                            f_tag = 0.0 if np.isnan(f_tag) else f_tag
+                            to_tag = 0.0 if np.isnan(to_tag) else to_tag
+
+                            text_dict['caption'] = caption
+                            text_dict['tokens'] = tokens
+                            if f_tag == 0.0 and to_tag == 0.0:
+                                flag = True
+                                text_data.append(text_dict)
+                            else:
+                                try:
+                                    n_motion = motion[int(f_tag*20) : int(to_tag*20)]
+                                    if (len(n_motion)) < min_motion_len or (len(n_motion) >= 200):
+                                        continue
+                                    new_name = random.choice('ABCDEFGHIJKLMNOPQRSTUVW') + '_' + name
+                                    while new_name in data_dict:
+                                        new_name = random.choice('ABCDEFGHIJKLMNOPQRSTUVW') + '_' + name
+                                    data_dict[new_name] = {'motion': n_motion,
+                                                        'length': len(n_motion),
+                                                        'text':[text_dict]}
+                                    new_name_list.append(new_name)
+                                    length_list.append(len(n_motion))
+                                except:
+                                    print(line_split)
+                                    print(line_split[2], line_split[3], f_tag, to_tag, name)
+                                    # break
+                        else:
+                            raise NotImplementedError
+
+
+                    else:
+                        text_dict = {}
+                        line_split = line.strip()
+                        caption = line_split
+                        tokens = caption.split(' ')
+                        f_tag = 0.0 
+                        to_tag = 0.0
+
+                        text_dict['caption'] = caption
+                        text_dict['tokens'] = tokens
+                        if f_tag == 0.0 and to_tag == 0.0:
+                            flag = True
+                            text_data.append(text_dict)
+
+
+
+            if flag:
+                data_dict[name] = {'motion': motion,
+                                    'length': len(motion),
+                                    'text': text_data}
+                new_name_list.append(name)
+                length_list.append(len(motion))
+                count += 1
+            # except:
+            #     import pdb; pdb.set_trace()
+            #     pass
+
+        name_list, length_list = zip(*sorted(zip(new_name_list, length_list), key=lambda x: x[1]))
+
+        self.mean = mean
+        self.std = std
+        self.length_arr = np.array(length_list)
+        self.data_dict = data_dict
+        self.name_list = name_list
+        self.reset_max_len(self.max_length)
+        self.nfeats = motion.shape[1]
+        
+
+    def reset_max_len(self, length):
+        assert length <= self.max_motion_length
+        self.pointer = np.searchsorted(self.length_arr, length)
+        print("Pointer Pointing at %d"%self.pointer)
+        self.max_length = length
+
+    def inv_transform(self, data):
+        return data * (self.std + 1e-7) + self.mean
+
+    def __len__(self):
+        return len(self.name_list) - self.pointer
+
+    def __getitem__(self, item):
+        idx = self.pointer + item
+        data = self.data_dict[self.name_list[idx]]
+        
+        retrieval_name = self.name_list[idx]
+        
+        motion, m_length, text_list = data['motion'], data['length'], data['text']
+        # Randomly select a caption
+        text_data = random.choice(text_list)
+        caption, tokens = text_data['caption'], text_data['tokens']
+
+
+        if self.text_source == 'token':
+            if len(tokens) < self.max_text_len:
+                # pad with "unk"
+                tokens = ['sos/OTHER'] + tokens + ['eos/OTHER']
+                sent_len = len(tokens)
+                tokens = tokens + ['unk/OTHER'] * (self.max_text_len + 2 - sent_len)
+            else:
+                # crop
+                tokens = tokens[:self.max_text_len]
+                tokens = ['sos/OTHER'] + tokens + ['eos/OTHER']
+                sent_len = len(tokens)
+        elif self.text_source == 'only_text_token' or self.text_source == 'caption':
+
+            if len(tokens) < self.max_text_len:
+                # pad with "unk"
+                tokens = ['sos'] + tokens + ['eos']
+                sent_len = len(tokens)
+                tokens = tokens + ['unk'] * (self.max_text_len + 2 - sent_len)
+            else:
+                # crop
+                tokens = tokens[:self.max_text_len]
+                tokens = ['sos'] + tokens + ['eos']
+                sent_len = len(tokens)
+
+
+        if self.text_source == 'token':
+            pos_one_hots = []
+            word_embeddings = []
+            for token in tokens:
+                word_emb, pos_oh = self.w_vectorizer[token]
+                pos_one_hots.append(pos_oh[None, :])
+                word_embeddings.append(word_emb[None, :])
+            pos_one_hots = np.concatenate(pos_one_hots, axis=0)
+            word_embeddings = np.concatenate(word_embeddings, axis=0)
+        elif self.text_source == 'only_text_token':
+            pos_one_hots = []
+            word_embeddings = []
+            for token in tokens:
+                word_emb = self.w_vectorizer[token]
+                word_embeddings.append(word_emb[None, :])
+            word_embeddings = np.concatenate(word_embeddings, axis=0)
+
+        elif self.text_source == 'caption':
+            pos_one_hots = []
+            word_embeddings = []
+
+            for token in tokens:
+                if self.eval_text_encode_way == 'clip':
+                    token = self.tokenizer(token, truncate=True).to(self.opt.device) 
+                    word_emb = self.text_enc.encode_text(token).squeeze().cpu().detach().numpy() # (512,)
+                elif self.eval_text_encode_way == 't5':
+                    word_emb = self.text_enc.encode(token) # 
+                else:
+                    word_emb = self.w_vectorizer[token] # (300,)
+                    
+
+                word_embeddings.append(word_emb[None, :])
+
+            word_embeddings = np.concatenate(word_embeddings, axis=0)
+
+
+        # Crop the motions in to times of 4, and introduce small variations
+        if self.unit_length < 10:
+            coin2 = np.random.choice(['single', 'single', 'double'])
+        else:
+            coin2 = 'single'
+
+        if coin2 == 'double':
+            m_length = (m_length // self.unit_length - 1) * self.unit_length
+        elif coin2 == 'single':
+            m_length = (m_length // self.unit_length) * self.unit_length
+        idx = random.randint(0, len(motion) - m_length)
+        motion = motion[idx:idx+m_length]
+
+        "Z Normalization"
+        #padd to max motion length
+        if len(motion) < self.max_motion_length:
+            motion = np.concatenate([motion, np.zeros((self.max_motion_length - len(motion), motion.shape[1]))], axis=0)
+        
+        print(self.mean.shape, self.std.shape, motion.shape,"motion shape")
+        motion = (motion - self.mean) / (self.std + 1e-7)
+        data["motion"] = motion.astype(np.float32)
+        data['length'] = len(motion)
+        data['word_embs'] = word_embeddings
+        data['pos_ohot'] = torch.tensor(pos_one_hots).float()
+        data['text_len'] = torch.tensor(sent_len).float()
+        data['retrieval_name'] = retrieval_name
+        return data
+        #return word_embeddings, pos_one_hots, caption, sent_len, motion, m_length, '_'.join(tokens), retrieval_name
+
+
+
 
 
 '''For Motion-X'''
@@ -1373,7 +1699,7 @@ class Text2MotionDatasetMotionX_text_all(data.Dataset):
             self.text_enc = text_enc
 
 
-        if dataset_name =='t2m' or dataset_name =='motionx':
+        if dataset_name =='t2m' or dataset_name =='motionx' or dataset_name.lower() == 'bsl':
             min_motion_len = 40 
         else:
             min_motion_len = 24

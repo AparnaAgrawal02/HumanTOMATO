@@ -117,6 +117,7 @@ class TEMOS(BaseModel):
 
     # Forward: text => motion
     def forward(self, batch: dict):
+        print("KKSFHJKDSBFJKFFFFFFFKFKFKFKFKFKFKFKFKFKFKFKFKFKFKFKFKFKFKFKFKFKFKFKFKFKFKFKFKFKFKFKFKFKFKFKFKFF"*100)
         """
         This function is used to perform the forward pass of the model.
 
@@ -236,6 +237,17 @@ class TEMOS(BaseModel):
                 ),
                 map_location=torch.device("cpu"),
             )
+
+        elif dataname == "BSL":
+            t2m_checkpoint = torch.load(
+                os.path.join(
+                    cfg.model.t2m_path,
+                    'motionx',
+                    cfg.DATASET.MOTION_TYPE,
+                    "text_mot_match/model/finest.tar",
+                ),
+                map_location=torch.device("cpu"),
+            )
         else:
             t2m_checkpoint = torch.load(
                 os.path.join(
@@ -243,7 +255,8 @@ class TEMOS(BaseModel):
                 ),
                 map_location=torch.device("cpu"),
             )
-
+        print(self.t2m_moveencoder)
+        print(t2m_checkpoint["movement_encoder"])
         self.t2m_textencoder.load_state_dict(t2m_checkpoint["text_encoder"])
 
         self.t2m_moveencoder.load_state_dict(t2m_checkpoint["movement_encoder"])
@@ -318,7 +331,9 @@ class TEMOS(BaseModel):
         """
         # Encode the text to the latent space
         if self.is_vae:
-            distribution = self.textencoder(text_sentences)
+            print("text_sentences", text_sentences)
+            print(self.textencoder)
+            distribution = self.textencoder(text_sentences[0]['caption'])
             latent_vector = self.sample_from_distribution(distribution)
         else:
             distribution = None
@@ -360,6 +375,11 @@ class TEMOS(BaseModel):
         # and whether a mask ratio is provided.
         if self.is_vae:
             if mask_ratio < 0.001:
+                #convert featre to float
+                features = features.float()
+                print("features", features.shape)
+                #mkae lengths t obe equal to lenghts of features
+                
                 distribution = self.motionencoder(features, lengths)
                 latent_vector = self.sample_from_distribution(distribution)
             else:
@@ -443,6 +463,7 @@ class TEMOS(BaseModel):
 
             # Compute the motion embeddings, with optional masking
             if self.mr < 0.001:
+        
                 motion_embedding = self.motionencoder(motions, lengths).loc  # (bs, 256)
             else:
                 # Compute the mask
@@ -582,7 +603,7 @@ class TEMOS(BaseModel):
         motions = self.datamodule.renorm4t2m(motions)
 
         # t2m motion encoder
-        m_lens = lengths.copy()
+        m_lens = lengths
         m_lens = torch.tensor(m_lens, device=motions.device)
         align_idx = np.argsort(m_lens.data.tolist())[::-1].copy()
         motions = motions[align_idx]
@@ -642,6 +663,7 @@ class TEMOS(BaseModel):
         # calculate the embedding distance.
         if self.cfg.LOSS.USE_INFONCE and self.cfg.LOSS.USE_INFONCE_FILTER:
             with torch.no_grad():
+                print(batch)
                 text_embedding = self.filter_model.encode(batch["text"])
                 text_embedding = torch.tensor(text_embedding).to(batch["motion"][0])
                 normalized = f.normalize(text_embedding, p=2, dim=1)
@@ -746,6 +768,7 @@ class TEMOS(BaseModel):
                         "kit",
                         "motionx",
                         "unimocap",
+                        'bsl',
                     ]:
                         raise TypeError(
                             "APE and AVE metrics only support humanml3d and kit datasets now"

@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 
-from tma.utils.joints import mmm_joints, humanml3d_joints, motionx_joints
+from tma.utils.joints import mmm_joints, humanml3d_joints, motionx_joints,bsl_joints
 
 # Get the indexes of particular body part
 
@@ -18,6 +18,8 @@ def get_forward_direction(poses, jointstype="mmm"):
         joints = humanml3d_joints
     elif jointstype == "motionx":
         joints = motionx_joints
+    elif jointstype.lower() == "bsl":
+        joints = bsl_joints
     else:
         raise TypeError('Only supports mmm, mmmns and humanl3d jointstype')
     # Shoulders
@@ -39,6 +41,8 @@ def get_floor(poses, jointstype="mmm"):
         joints = humanml3d_joints
     elif jointstype == "motionx":
         joints = motionx_joints
+    elif jointstype.lower() == "bsl":
+        joints = bsl_joints
     else:
         raise TypeError('Only supports mmm, mmmns and humanl3d jointstype')
     ndim = len(poses.shape)
