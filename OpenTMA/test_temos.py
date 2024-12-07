@@ -68,7 +68,7 @@ def main():
     output_dir = Path(
         os.path.join(cfg.FOLDER, str(cfg.model.model_type), str(cfg.NAME), "samples")
     )
-
+    print(output_dir )
     output_dir.mkdir(parents=True, exist_ok=True)
     logger.info(OmegaConf.to_yaml(cfg))
 

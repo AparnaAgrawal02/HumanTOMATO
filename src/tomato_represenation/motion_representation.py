@@ -515,6 +515,8 @@ if __name__ == "__main__":
        #try:
             data, ground_positions, positions, l_velocity = process_file(
                 source_data, 0.002)
+            #print min and max of data
+            print(data.min(), data.max())
             #print(ground_positions)
             rec_ric_data = recover_from_ric(torch.from_numpy(
                 data).unsqueeze(0).float(), joints_num)

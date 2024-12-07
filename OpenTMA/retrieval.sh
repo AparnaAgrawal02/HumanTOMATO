@@ -1,8 +1,8 @@
 #!/bin/bash
 
-path1="./experiments/temos/H3D-TMR-v1/embeddings/val/epoch_99/"
-path2="./experiments/temos/H3D-TMR-v1/embeddings/val/epoch_599/"
-path3="./experiments/temos/H3D-TMR-v1/embeddings/val/epoch_999/"
+path1="/scratch/aparna/experiments/temos/BSL/embeddings/val/epoch_99/"
+path2="/scratch/aparna/experiments/temos/BSL/embeddings/val/epoch_599/"
+path3="/scratch/aparna/experiments/temos/BSL/embeddings/val/epoch_3999/"
 
 
 for protocal in A B D

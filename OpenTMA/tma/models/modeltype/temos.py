@@ -74,6 +74,8 @@ class TEMOS(BaseModel):
 
         if cfg.TRAIN.OPTIM.TYPE.lower() == "adamw":
             self.optimizer = AdamW(lr=cfg.TRAIN.OPTIM.LR, params=self.parameters())
+            #clip 
+            
         else:
             raise NotImplementedError("Do not support other optimizer for now.")
 
@@ -255,7 +257,7 @@ class TEMOS(BaseModel):
                 ),
                 map_location=torch.device("cpu"),
             )
-        print(self.t2m_moveencoder)
+        #print(self.t2m_moveencoder)
         print(t2m_checkpoint["movement_encoder"])
         self.t2m_textencoder.load_state_dict(t2m_checkpoint["text_encoder"])
 
@@ -331,16 +333,19 @@ class TEMOS(BaseModel):
         """
         # Encode the text to the latent space
         if self.is_vae:
-            print("text_sentences", text_sentences)
-            print(self.textencoder)
-            distribution = self.textencoder(text_sentences[0]['caption'])
+           # print("text_sentences", text_sentences)
+          #  print(self.textencoder)
+            distribution = self.textencoder(text_sentences)
             latent_vector = self.sample_from_distribution(distribution)
+           # print(latent_vector,latent_vector.shape,"latent_vector")
         else:
             distribution = None
             latent_vector = self.textencoder(text_sentences)
-
+          #  print(latent_vector,latent_vector.shape,"latent_vector1")
         # Decode the latent vector to a motion
+       # print("latent_vector", latent_vector, latent_vector.shape)
         features = self.motiondecoder(latent_vector, lengths)
+        #print("features", features,features.shape  )
 
         if not return_latent:
             return features
@@ -377,10 +382,13 @@ class TEMOS(BaseModel):
             if mask_ratio < 0.001:
                 #convert featre to float
                 features = features.float()
-                print("features", features.shape)
+                #print("features", features)
                 #mkae lengths t obe equal to lenghts of features
+                #clip model
                 
+
                 distribution = self.motionencoder(features, lengths)
+                #print("distribution", distribution)
                 latent_vector = self.sample_from_distribution(distribution)
             else:
                 num_mask = int(features.shape[1] * mask_ratio)
@@ -521,6 +529,7 @@ class TEMOS(BaseModel):
             self.retrieval_text_embedding.append(text_all.detach().cpu().numpy())
             self.retrieval_motion_embedding.append(motion_all.detach().cpu().numpy())
             self.retrieval_corres_name.append(retrieval_name)
+            print("retrival_name", retrieval_name)
 
     def t2m_eval(self, batch):
         """
@@ -657,13 +666,13 @@ class TEMOS(BaseModel):
         return rs_set
 
     def allsplit_step(self, split: str, batch, batch_idx):
-
+        
         emb_dist = None
         # If the configuration specifies to use InfoNCE loss and filter, it
         # calculate the embedding distance.
         if self.cfg.LOSS.USE_INFONCE and self.cfg.LOSS.USE_INFONCE_FILTER:
             with torch.no_grad():
-                print(batch)
+                #print(batch)
                 text_embedding = self.filter_model.encode(batch["text"])
                 text_embedding = torch.tensor(text_embedding).to(batch["motion"][0])
                 normalized = f.normalize(text_embedding, p=2, dim=1)
@@ -725,7 +734,10 @@ class TEMOS(BaseModel):
             TMR_text_embedding=TMR_text_embedding,
             TMR_motion_embedding=TMR_motion_embedding,
         )
+        #clip grad
+        torch.nn.utils.clip_grad_norm_(self.parameters(), 1.0)
 
+        print(loss, "loss")
         if loss is None:
             raise ValueError("Loss is None, this happend with torchmetrics > 0.7")
 
@@ -879,7 +891,9 @@ class TEMOS(BaseModel):
 
                 # convert the gathered data to a list of strings
                 self._retrieval_corres_name = []
-                for gathered_batch in gathered_data:
+                #print("gathered_data", gathered_data)
+                #breakpoint()
+                for gathered_batch in [gathered_data]:
                     gathered_strings = [''.join([chr(int(char)) for char in tensor if int(char) > 0]) for tensor in gathered_batch]
                     self._retrieval_corres_name.extend(gathered_strings)
                 

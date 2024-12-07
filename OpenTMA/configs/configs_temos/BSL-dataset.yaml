@@ -90,6 +90,6 @@ LOGGER:
   VAL_EVERY_STEPS: 100
   TENSORBOARD: True
   WANDB:
-    PROJECT: null
+    PROJECT: bsl_t2m
     OFFLINE: False
     RESUME_ID: null

@@ -36,16 +36,16 @@ def mean_variance(data_dir, save_dir, joints_num):
     Mean = data.mean(axis=0)
     Std = data.std(axis=0)
     print(Mean.shape, Std.shape)
-    # Std[0:1] = Std[0:1].mean() / 1.0
-    # Std[1:3] = Std[1:3].mean() / 1.0
-    # Std[3:4] = Std[3:4].mean() / 1.0
-    # Std[4: 4+(joints_num - 1) * 3] = Std[4: 4+(joints_num - 1) * 3].mean() / 1.0
-    # Std[4+(joints_num - 1) * 3: 4+(joints_num - 1) * 9] = Std[4+(joints_num - 1) * 3: 4+(joints_num - 1) * 9].mean() / 1.0
-    # Std[4+(joints_num - 1) * 9: 4+(joints_num - 1) * 9 + joints_num*3] = Std[4+(joints_num - 1) * 9: 4+(joints_num - 1) * 9 + joints_num*3].mean() / 1.0
-    # Std[4 + (joints_num - 1) * 9 + joints_num * 3: ] = Std[4 + (joints_num - 1) * 9 + joints_num * 3: ].mean() / 1.0
+    Std[0:1] = Std[0:1].mean() / 1.0  #1
+    Std[1:3] = Std[1:3].mean() / 1.0  #2
+    Std[3:4] = Std[3:4].mean() / 1.0  #1
+    Std[4: 4+(joints_num - 1) * 3] = Std[4: 4+(joints_num - 1) * 3].mean() / 1.0    #3
+    # Std[4+(joints_num - 1) * 3: 4+(joints_num - 1) * 9] = Std[4+(joints_num - 1) * 3: 4+(joints_num - 1) * 9].mean() / 1.0    #6  
+    Std[4+(joints_num - 1) * 9: 4+(joints_num - 1) * 9 + joints_num*3] = Std[4+(joints_num - 1) * 9: 4+(joints_num - 1) * 9 + joints_num*3].mean() / 1.0
+    Std[4 + (joints_num - 1) * 9 + joints_num * 3: ] = Std[4 + (joints_num - 1) * 9 + joints_num * 3: ].mean() / 1.0
 
-    # print(Std.shape,8 + (joints_num - 1) * 9 + joints_num * 3)
-    # assert 8 + (joints_num - 1) * 9 + joints_num * 3 == Std.shape[-1]
+    print(Std.shape,8 + (joints_num - 1) * 9 + joints_num * 3,"fck")
+    assert 8 + (joints_num - 1) * 9 + joints_num * 3 == Std.shape[-1]
 
     np.save(pjoin(save_dir, 'Mean.npy'), Mean)
     np.save(pjoin(save_dir, 'Std.npy'), Std)
@@ -54,4 +54,4 @@ def mean_variance(data_dir, save_dir, joints_num):
 
 data_dir = "/scratch/aparna/BSL_t2m_test/"
 save_dir = "/scratch/aparna/BSL_t2m_test/"
-mean_variance(data_dir, save_dir, 21)
+mean_variance(data_dir, save_dir, 52)

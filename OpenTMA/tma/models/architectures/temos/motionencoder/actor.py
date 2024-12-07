@@ -58,6 +58,7 @@ class ActorAgnosticEncoder(pl.LightningModule):
         self.save_hyperparameters(logger=False)
         input_feats = nfeats
         self.skel_embedding = nn.Linear(input_feats, latent_dim)
+        self.layer_norm = nn.LayerNorm(latent_dim)
 
         # Action agnostic: only one set of params
         if vae:
@@ -103,9 +104,17 @@ class ActorAgnosticEncoder(pl.LightningModule):
         mask = lengths_to_mask(lengths, device)
 
         x = features
+        #print(torch.min(x),torch.max(x),x.shape,x,"featuree1")
+        #print(x.shape,x,"featuree2")
         # Embed each human poses into latent vectors
+        
+        #print(self.skel_embedding.weight,self.skel_embedding.bias,"weights")
+        #print(torch.min(x),torch.max(x),x.shape,"feature145345")
         x = self.skel_embedding(x)
-
+        #check if any nan values
+       # print(torch.min(x),torch.max(x),x.shape,"featuree3")
+        x = self.layer_norm(x)
+        #print(x.shape,x)
         # Switch sequence and batch_size because the input of
         # Pytorch Transformer is [Sequence, Batch size, ...]
         x = x.permute(1, 0, 2)  # now it is [nframes, bs, latent_dim]
@@ -138,6 +147,7 @@ class ActorAgnosticEncoder(pl.LightningModule):
         if self.hparams.vae:
             mu, logvar = final[0], final[1]
             std = logvar.exp().pow(0.5)
+            #print(mu.shape, std.shape, mu, std)
             # https://github.com/kampta/pytorch-distributions/blob/master/gaussian_vae.py
             dist = torch.distributions.Normal(mu, std)
             return dist

@@ -1407,6 +1407,7 @@ class Text2MotionDatasetMotionX(data.Dataset):
             
             # try:
             motion = np.load(pjoin(motion_dir, name + '.npy'))
+            #print(min(motion.flatten()), max(motion.flatten()),"got loaded")
             if (len(motion)) < min_motion_len:
                 continue
             elif len(motion) >= self.max_motion_length:
@@ -1415,8 +1416,9 @@ class Text2MotionDatasetMotionX(data.Dataset):
             text_data = []
             flag = False
             with cs.open(pjoin("/scratch/aparna/BSL_t2m_test_ready/texts", name + '.txt')) as f:
+              
                 for line in f.readlines():
-                    print(name,"name")
+                    #print(name,"name")
                     if 'humanml' in name:
                         if text_source == 'token':
                             text_dict = {}
@@ -1544,7 +1546,10 @@ class Text2MotionDatasetMotionX(data.Dataset):
         retrieval_name = self.name_list[idx]
         
         motion, m_length, text_list = data['motion'], data['length'], data['text']
-        # Randomly select a caption
+       # print(motion.shape)
+       # print(min(torch.tensor(motion).flatten()), max(torch.tensor(motion).flatten()), "min max of motion")
+        #print(min(motion.flatten()), max(motion.flatten()), "min max of motionv1")
+         # Randomly select a caption
         text_data = random.choice(text_list)
         caption, tokens = text_data['caption'], text_data['tokens']
 
@@ -1625,18 +1630,24 @@ class Text2MotionDatasetMotionX(data.Dataset):
 
         "Z Normalization"
         #padd to max motion length
-        if len(motion) < self.max_motion_length:
-            motion = np.concatenate([motion, np.zeros((self.max_motion_length - len(motion), motion.shape[1]))], axis=0)
-        
-        print(self.mean.shape, self.std.shape, motion.shape,"motion shape")
         motion = (motion - self.mean) / (self.std + 1e-7)
-        data["motion"] = motion.astype(np.float32)
-        data['length'] = len(motion)
-        data['word_embs'] = word_embeddings
-        data['pos_ohot'] = torch.tensor(pos_one_hots).float()
-        data['text_len'] = torch.tensor(sent_len).float()
-        data['retrieval_name'] = retrieval_name
-        return data
+        if len(motion) < self.max_motion_length:
+            motion = np.concatenate([motion, motion[-1].reshape(1, -1).repeat(self.max_motion_length - len(motion), axis=0)], axis=0)
+        
+        #print(self.mean.shape, self.std.shape, motion.shape,"motion shape")
+        
+       # print(self.mean, self.std, motion.shape, "mean, std, motion shape")  
+       # print min nad max of motion
+        #print(np.min(motion), np.max(motion), "min max of motion") 
+        data_ = {}
+        data_["motion"] = motion.astype(np.float32)
+        data_['length'] = len(motion)
+        data_['word_embs'] = word_embeddings
+        data_['pos_ohot'] = torch.tensor(pos_one_hots).float()
+        data_['text_len'] = torch.tensor(sent_len).float()
+        data_['retrieval_name'] = retrieval_name
+        data_['text'] = caption
+        return data_
         #return word_embeddings, pos_one_hots, caption, sent_len, motion, m_length, '_'.join(tokens), retrieval_name
 
 
