@@ -42,10 +42,10 @@ def mean_variance(data_dir, save_dir, joints_num):
     Std[4: 4+(joints_num - 1) * 3] = Std[4: 4+(joints_num - 1) * 3].mean() / 1.0    #3
     # Std[4+(joints_num - 1) * 3: 4+(joints_num - 1) * 9] = Std[4+(joints_num - 1) * 3: 4+(joints_num - 1) * 9].mean() / 1.0    #6  
     Std[4+(joints_num - 1) * 9: 4+(joints_num - 1) * 9 + joints_num*3] = Std[4+(joints_num - 1) * 9: 4+(joints_num - 1) * 9 + joints_num*3].mean() / 1.0
-    #Std[4 + (joints_num - 1) * 9 + joints_num * 3: ] = Std[4 + (joints_num - 1) * 9 + joints_num * 3: ].mean() / 1.0
+    Std[4 + (joints_num - 1) * 9 + joints_num * 3: ] = Std[4 + (joints_num - 1) * 9 + joints_num * 3: ].mean() / 1.0
 
     print(Std.shape,8 + (joints_num - 1) * 9 + joints_num * 3,"fck")
-    #assert 8 + (joints_num - 1) * 9 + joints_num * 3 == Std.shape[-1]
+    assert 8 + (joints_num - 1) * 9 + joints_num * 3 == Std.shape[-1]
 
     np.save(pjoin(save_dir, 'Mean.npy'), Mean)
     np.save(pjoin(save_dir, 'Std.npy'), Std)

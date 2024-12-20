@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH -A aparna
-#SBATCH -c 38
+#SBATCH -c 18
 #SBATCH -w gnode068
-#SBATCH --gres=gpu:4
+#SBATCH --gres=gpu:2
 #SBATCH --mem-per-cpu=2G
 #SBATCH --time=10-00:00:00
 #SBATCH --mail-type=END
