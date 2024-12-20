@@ -13,10 +13,11 @@ from tma.models.get_model import get_model
 from tma.utils.logger import create_logger
 
 
-def main():
+def main(wandb_config=None):
     # Parse arguments from command line
     cfg = parse_args()
-
+    # cfg.LOSS.LAMBDA_LATENT = wandb_config.LATENT_LOSS
+    # cfg.LAMBDA_KL = wandb_config.KL_LOSS
     # Create a logger for logging events during training
     logger = create_logger(cfg, phase="train")
 
@@ -179,4 +180,18 @@ def main():
 
 
 if __name__ == "__main__":
+    # sweep_config = {
+    #     'method': 'random',
+    
+    #     'parameters': {
+    #         'LATENT_LOSS': {
+    #             'values': [1e-3,1e-5, 1e-6, 1e-7]
+    #         },
+    #         'KL_LOSS': {
+    #             'values': [1e-3,1e-5, 1e-6, 1e-7]
+    #         }
+    #     }
+    # }
+    # sweep_id = wandb.sweep(sweep_config, project="pytorch-sweeps-demo")
+    # wandb.agent(sweep_id, function=main)
     main()

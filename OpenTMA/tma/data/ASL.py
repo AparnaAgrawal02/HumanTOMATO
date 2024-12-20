@@ -5,12 +5,12 @@ from tma.data.humanml.scripts.motion_process import process_file, recover_from_r
 
 from .base import BASEDataModule
 from .humanml.data.dataset import (
-    Text2MotionDatasetBSL,
+    Text2MotionDatasetASL,
     Text2MotionDatasetMotionX_text_all,
 )
 
 
-class BSL_DataModule(BASEDataModule):
+class ASL_DataModule(BASEDataModule):
 
     def __init__(
         self, cfg, batch_size, num_workers, collate_fn=None, phase="train", **kwargs
@@ -19,10 +19,10 @@ class BSL_DataModule(BASEDataModule):
             batch_size=batch_size, num_workers=num_workers, collate_fn=collate_fn
         )
         self.save_hyperparameters(logger=False)
-        self.name = "bsl"
+        self.name = "asl"
         if cfg.DATASET.JOINT_TYPE == "humanml3d":
             self.njoints = 22
-        elif cfg.DATASET.JOINT_TYPE == "motionx" or "bsl":
+        elif cfg.DATASET.JOINT_TYPE == "motionx" or "asl":
             self.njoints = 52
         else:
             raise NotImplemented
@@ -42,7 +42,7 @@ class BSL_DataModule(BASEDataModule):
             ]:
                 self.Dataset = Text2MotionDatasetMotionX_text_all
             else:
-                self.Dataset = Text2MotionDatasetBSL
+                self.Dataset = Text2MotionDatasetASL
 
         self.cfg = cfg
         sample_overrides = {"split": "val", "tiny": True, "progress_bar": False}

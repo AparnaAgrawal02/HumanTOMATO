@@ -13,13 +13,14 @@ from .UniMocap import UniMocapDataModule
 from .utils import *
 from .MotionX import Motion_XDataModule
 from .BSL import BSL_DataModule
+from .ASL import ASL_DataModule
 
 
 def get_mean_std(phase, cfg, dataset_name):
 
     # todo: use different mean and val for phases
     name = "t2m" if dataset_name == "humanml3d" else dataset_name
-    assert name in ["t2m", "kit", "motionx", "unimocap","BSL"]
+    assert name in ["t2m", "kit", "motionx", "unimocap","BSL",'ASL']
     # if phase in ["train", "val", "test"]:
     if name in ["t2m", "kit"]:
         if phase in ["val"]:
@@ -70,7 +71,7 @@ def get_mean_std(phase, cfg, dataset_name):
                 )
             )
     
-    elif name in ["BSL"]:
+    elif name in ["BSL",'ASL']:
 
         if phase in ["val"]:
             data_root = pjoin(
@@ -139,7 +140,7 @@ def get_njoints(dataset_name):
         njoints = 22
     elif dataset_name == "kit":
         njoints = 21
-    elif dataset_name == "motionx" or dataset_name == "bsl":
+    elif dataset_name == "motionx" or dataset_name == "bsl" or dataset_name == 'asl':
         njoints = 52
     else:
         raise NotImplementedError
@@ -213,7 +214,7 @@ def reget_mean_std(cfg, dataset_name, mean, std):
 def get_WordVectorizer(cfg, phase, dataset_name):
     # import pdb; pdb.set_trace()
     if phase not in ["text_only"]:
-        if dataset_name.lower() in ["unimocap", "motionx", "humanml3d", "kit","bsl"]:
+        if dataset_name.lower() in ["unimocap", "motionx", "humanml3d", "kit","bsl",'asl']:
             if cfg.model.eval_text_source == "token":
                 return WordVectorizer(
                     cfg.DATASET.WORD_VERTILIZER_PATH,
@@ -233,7 +234,7 @@ def get_WordVectorizer(cfg, phase, dataset_name):
 
 
 def get_collate_fn(name, cfg, phase="train"):
-    if name.lower() in ["humanml3d", "kit", "motionx", "unimocap", "BSL"]:
+    if name.lower() in ["humanml3d", "kit", "motionx", "unimocap", "BSL", 'ASL']:
         if cfg.model.condition in [
             "text_all",
             "text_face",
@@ -260,6 +261,7 @@ dataset_module_map = {
     "motionx": Motion_XDataModule,
     "unimocap": UniMocapDataModule,
     'bsl': BSL_DataModule,
+    'asl': ASL_DataModule,
 }
 motion_subdir = {
     "unimocap": "new_joint_vecs",
@@ -267,6 +269,7 @@ motion_subdir = {
     "kit": "new_joint_vecs",
     "motionx": "motion_data",
     "bsl": "new_joint_vecs",
+    "asl": "new_joint_vecs",
 }
 
 
@@ -362,7 +365,7 @@ def get_datasets(cfg, logger=None, phase="train"):
             # todo: add amass dataset
             raise NotImplementedError
 
-        elif dataset_name.lower() in ["motionx", "bsl"]:
+        elif dataset_name.lower() in ["motionx", "bsl", "asl"]:
             data_root = eval(f"cfg.DATASET.{dataset_name.upper()}.ROOT")
             # get mean and std corresponding to dataset
             mean, std = get_mean_std(phase, cfg, dataset_name)

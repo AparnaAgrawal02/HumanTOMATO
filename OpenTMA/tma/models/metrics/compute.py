@@ -40,7 +40,7 @@ class ComputeMetrics(Metric):
         super().__init__(dist_sync_on_step=dist_sync_on_step)
 
         # Check if the jointstype is valid
-        if jointstype.lower() not in ["mmm", "humanml3d", "motionx",'bsl']:
+        if jointstype.lower() not in ["mmm", "humanml3d", "motionx",'bsl','asl']:
             print(jointstype)
             raise NotImplementedError("This jointstype is not implemented.")
 
@@ -223,7 +223,7 @@ class ComputeMetrics(Metric):
                 factor = 1000.0 * 0.75 / 480.0
             elif self.jointstype == "motionx":
                 factor = 1000.0
-            elif self.jointstype.lower() == "bsl":
+            elif self.jointstype.lower() == "bsl" or self.jointstype.lower() == "asl":
                 factor = 1000.0
             # return results in meters
             return (

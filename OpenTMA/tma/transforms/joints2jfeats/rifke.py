@@ -16,7 +16,7 @@ class Rifke(Joints2Jfeats):
                  normalization: bool = False,
                  forward_filter: bool = False,
                  **kwargs) -> None:
-        if jointstype.lower() not in ["mmm", "mmmns", "humanml3d", "motionx",'bsl']:
+        if jointstype.lower() not in ["mmm", "mmmns", "humanml3d", "motionx",'bsl','asl']:
             print("This function assume that the root is the first index")
             raise NotImplementedError("This jointstype is not implemented.")
 

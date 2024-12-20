@@ -79,7 +79,7 @@ def findAllFile(base):
 smplx_layer, smplx_model = get_smplx_layer(comp_device)
 
 # change your path here with Motion-X SMPLX format with 322 dims
-train_dataset = MotionDatasetV2(root_path='/scratch/aparna/BSL_t2m_test/', debug=False)
+train_dataset = MotionDatasetV2(root_path='/scratch/aparna/ASL_t2m/smplx_322', debug=False)
 train_loader = DataLoader(train_dataset, batch_size=1, drop_last=False,
                           num_workers=4, shuffle=False, collate_fn=mld_collate)
 

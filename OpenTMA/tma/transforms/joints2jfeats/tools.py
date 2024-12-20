@@ -18,7 +18,7 @@ def get_forward_direction(poses, jointstype="mmm"):
         joints = humanml3d_joints
     elif jointstype == "motionx":
         joints = motionx_joints
-    elif jointstype.lower() == "bsl":
+    elif jointstype.lower() == "bsl" or jointstype.lower() == "asl":
         joints = bsl_joints
     else:
         raise TypeError('Only supports mmm, mmmns and humanl3d jointstype')
@@ -41,7 +41,7 @@ def get_floor(poses, jointstype="mmm"):
         joints = humanml3d_joints
     elif jointstype == "motionx":
         joints = motionx_joints
-    elif jointstype.lower() == "bsl":
+    elif jointstype.lower() == "bsl" or jointstype.lower() == "asl":
         joints = bsl_joints
     else:
         raise TypeError('Only supports mmm, mmmns and humanl3d jointstype')

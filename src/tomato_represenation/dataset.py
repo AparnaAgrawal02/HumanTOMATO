@@ -106,8 +106,8 @@ class MotionDatasetV2(data.Dataset):
 
         # Finding all files in the specified directory
         
-        #self.id_list = findAllFile(root_path)
-        self.id_list = findSignlanguegeFiles(root_path)
+        self.id_list = findAllFile(root_path)
+        #self.id_list = findSignlanguegeFiles(root_path)
         # Limiting the number of files for debugging purposes
         if debug:
             self.id_list = self.id_list[:100]

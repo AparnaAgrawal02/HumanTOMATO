@@ -383,7 +383,7 @@ if __name__ == '__main__':
     # Visualize your final data, please define your example_path, like 'new_data_humanml_000067_joints_using_smplx_rotation.npy'
     example_path = "/scratch/aparna/BSL_t2m_test/ALIR/a_005_073_000_ALIR/new_joints/smplx_322.npy"
     assert example_path != None
-    joints = np.load("/scratch/aparna/BSL_t2m_test/ALIR/a_005_073_000_ALIR/joint/smplx_322.npy")
+    joints = np.load("/scratch/aparna/ASL_t2m/new_joints/aRLsDsSFCkg_1-5-rgb_front.pkl.npy")
 
     # 2*3*5=30, left first, then right
     hand_joints_id = [i for i in range(25, 55)]

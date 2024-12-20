@@ -1,4 +1,4 @@
-NAME: BSL # Experiment name
+NAME: ASL # Experiment name
 DEBUG: False # Debug mode
 ACCELERATOR: 'gpu' # Devices optioncal: “cpu”, “gpu”, “tpu”, “ipu”, “hpu”, “mps, “auto”
 DEVICE: [0] # Index of gpus eg. [0] or [0,1,2,3]
@@ -9,9 +9,9 @@ TRAIN:
   #---------------------------------
   STAGE: temos # stage "vae" or "diffusion", "vae_diffusion"
   #---------------------------------
-  DATASETS: ['BSL'] # Training datasets
-  NUM_WORKERS: 0 # Number of workers
-  BATCH_SIZE: 128 # Size of batches
+  DATASETS: ['ASL'] # Training datasets
+  NUM_WORKERS: 10 # Number of workers
+  BATCH_SIZE: 64 # Size of batches
   START_EPOCH: 0 # Start epochMMOTIONENCODER
   END_EPOCH: 4000 # End epoch
   RESUME: '' # Resume training from this path
@@ -23,7 +23,7 @@ TRAIN:
 
 # Evaluating Configuration
 EVAL:
-  DATASETS: ['BSL'] # Evaluating datasets
+  DATASETS: ['ASL'] # Evaluating datasets
   BATCH_SIZE: 32 # Evaluating Batch size
   SPLIT: test
 
@@ -31,10 +31,10 @@ EVAL:
 TEST:
   PRETRAINED_CHECKPOINTS_VAE: ''
   SAVE_PREDICTIONS: False
-  CHECKPOINTS: './experiments/temos/BSL-v1/checkpoints/epoch=299.ckpt' # Pretrained model path
-  DATASETS: ['BSL'] # training datasets
+  CHECKPOINTS: '/scratch/aparna/experiments/temos/ASL/checkpoints/epoch=299.ckpt' # Pretrained model path
+  DATASETS: ['ASL'] # training datasets
   SPLIT: test
-  BATCH_SIZE: 32 # training Batch size
+  BATCH_SIZE: 16 # training Batch size
   MEAN: False
   NUM_SAMPLES: 1
   FACT: 1
@@ -42,7 +42,7 @@ TEST:
 
 # Datasets Configuration
 DATASET:
-  JOINT_TYPE: 'BSL' # join type
+  JOINT_TYPE: 'ASL' # join type
   VERSION: ''
   MOTION_TYPE: 'vector_623'
   TEXT_SOURCE: 'only_text_token'
@@ -53,8 +53,8 @@ LOSS:
   TYPE: temos # Losses type
   USE_INFONCE: True
   USE_INFONCE_FILTER: True
-  LAMBDA_LATENT: 1.0e-5 # Lambda for latent Losses
-  LAMBDA_KL: 1.0e-5 # Lambda for kl Losses
+  LAMBDA_LATENT: 1.0e-4 # Lambda for latent Losses
+  LAMBDA_KL: 1.0e-3 # Lambda for kl Losses
   LAMBDA_REC: 1.0 # Lambda for reconstruction Losses
   LAMBDA_GEN: 1.0 # Lambda for text-motion generation losses
   LAMBDA_CROSS: 1.0 # Lambda for reconstruction Losses
@@ -90,6 +90,6 @@ LOGGER:
   VAL_EVERY_STEPS: 100
   TENSORBOARD: True
   WANDB:
-    PROJECT: bsl_t2m
+    PROJECT: ASL_t2m
     OFFLINE: False
     RESUME_ID: null

@@ -3,7 +3,7 @@ SEED_VALUE: 1234
 DEBUG: True
 TRAIN:
   SPLIT: 'train'
-  NUM_WORKERS: 0 # Number of workers
+  NUM_WORKERS: 10 # Number of workers
   BATCH_SIZE: 4 # Size of batches
   START_EPOCH: 0 # Start epoch
   END_EPOCH: 2000 # End epoch
@@ -29,14 +29,14 @@ TRAIN:
 EVAL:
   SPLIT: 'gtest'
   BATCH_SIZE: 1 # Evaluating Batch size
-  NUM_WORKERS: 0 # Evaluating Batch size
+  NUM_WORKERS: 10 # Evaluating Batch size
 
 TEST:
   TEST_DIR: ''
   CHECKPOINTS: '' # Pretrained model path
   SPLIT: 'gtest'
   BATCH_SIZE: 1 # Testing Batch size
-  NUM_WORKERS: 0 # Evaluating Batch size
+  NUM_WORKERS: 10 # Evaluating Batch size
   SAVE_PREDICTIONS: False # Weather to save predictions
   COUNT_TIME: False # Weather to count time during test
   REPLICATION_TIMES: 20 # Number of times to replicate the test
@@ -103,6 +103,8 @@ DATASET:
   MOTIONX:
     UNIT_LEN: 4
   BSL:
+    UNIT_LEN: 4
+  ASL:
     UNIT_LEN: 4
 
 LOGGER:

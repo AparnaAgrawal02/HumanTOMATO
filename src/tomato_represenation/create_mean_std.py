@@ -13,19 +13,19 @@ from os.path import join as pjoin
 # foot contact (B, seq_len, 4)
 def mean_variance(data_dir, save_dir, joints_num):
     
-    file_list =[]
-    for gloss in os.listdir(data_dir):
-        if ".npy" in gloss:
-            continue
-        for dir1 in os.listdir(pjoin(data_dir, gloss)):
-            file = pjoin(data_dir, gloss, dir1, "new_joint_vecs","smplx_322.npy")
-            file_list.append(file)
-    # file_list = os.listdir(data_dir)
+    # file_list =[]
+    # for gloss in os.listdir(data_dir):
+    #     if ".npy" in gloss:
+    #         continue
+    #     for dir1 in os.listdir(pjoin(data_dir, gloss)):
+    #         file = pjoin(data_dir, gloss, dir1, "new_joint_vecs","smplx_322.npy")
+    #         file_list.append(file)
+    file_list = os.listdir(data_dir)
     data_list = []
 
     for file in file_list:
         print(file)
-        data = np.load( file)
+        data = np.load(pjoin(data_dir, file))
         if np.isnan(data).any():
             print(file)
             continue
@@ -36,22 +36,22 @@ def mean_variance(data_dir, save_dir, joints_num):
     Mean = data.mean(axis=0)
     Std = data.std(axis=0)
     print(Mean.shape, Std.shape)
-    # Std[0:1] = Std[0:1].mean() / 1.0
-    # Std[1:3] = Std[1:3].mean() / 1.0
-    # Std[3:4] = Std[3:4].mean() / 1.0
-    # Std[4: 4+(joints_num - 1) * 3] = Std[4: 4+(joints_num - 1) * 3].mean() / 1.0
-    # Std[4+(joints_num - 1) * 3: 4+(joints_num - 1) * 9] = Std[4+(joints_num - 1) * 3: 4+(joints_num - 1) * 9].mean() / 1.0
-    # Std[4+(joints_num - 1) * 9: 4+(joints_num - 1) * 9 + joints_num*3] = Std[4+(joints_num - 1) * 9: 4+(joints_num - 1) * 9 + joints_num*3].mean() / 1.0
-    # Std[4 + (joints_num - 1) * 9 + joints_num * 3: ] = Std[4 + (joints_num - 1) * 9 + joints_num * 3: ].mean() / 1.0
+    Std[0:1] = Std[0:1].mean() / 1.0  #1
+    Std[1:3] = Std[1:3].mean() / 1.0  #2
+    Std[3:4] = Std[3:4].mean() / 1.0  #1
+    Std[4: 4+(joints_num - 1) * 3] = Std[4: 4+(joints_num - 1) * 3].mean() / 1.0    #3
+    # Std[4+(joints_num - 1) * 3: 4+(joints_num - 1) * 9] = Std[4+(joints_num - 1) * 3: 4+(joints_num - 1) * 9].mean() / 1.0    #6  
+    Std[4+(joints_num - 1) * 9: 4+(joints_num - 1) * 9 + joints_num*3] = Std[4+(joints_num - 1) * 9: 4+(joints_num - 1) * 9 + joints_num*3].mean() / 1.0
+    #Std[4 + (joints_num - 1) * 9 + joints_num * 3: ] = Std[4 + (joints_num - 1) * 9 + joints_num * 3: ].mean() / 1.0
 
-    # print(Std.shape,8 + (joints_num - 1) * 9 + joints_num * 3)
-    # assert 8 + (joints_num - 1) * 9 + joints_num * 3 == Std.shape[-1]
+    print(Std.shape,8 + (joints_num - 1) * 9 + joints_num * 3,"fck")
+    #assert 8 + (joints_num - 1) * 9 + joints_num * 3 == Std.shape[-1]
 
     np.save(pjoin(save_dir, 'Mean.npy'), Mean)
     np.save(pjoin(save_dir, 'Std.npy'), Std)
 
     return Mean, Std
 
-data_dir = "/scratch/aparna/BSL_t2m_test/"
-save_dir = "/scratch/aparna/BSL_t2m_test/"
-mean_variance(data_dir, save_dir, 21)
+data_dir = "/scratch/aparna/ASL_t2m/new_joint_vecs"
+save_dir = "/scratch/aparna/ASL_t2m/"
+mean_variance(data_dir, save_dir, 52)

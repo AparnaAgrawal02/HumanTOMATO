@@ -480,7 +480,8 @@ if __name__ == "__main__":
     # ds_num = 8
 
     # change your motion_data joint
-    data_dir = '/scratch/aparna/BSL_t2m_test/'
+    #data_dir = '/scratch/aparna/BSL_t2m_test/'
+    data_dir = "/scratch/aparna/ASL_t2m/joint"
     # change your save folder
     # save_dir1 = 'motion_data/new_joints/'
     # # change your save folder
@@ -507,14 +508,17 @@ if __name__ == "__main__":
     # tgt_offsets is the 000021 skeleton bone lengths with the predefined offset directions. global postion offsets
     tgt_offsets = tgt_skel.get_offsets_joints(example_data[0])
 
-    source_list = findSignlanguegeFiles(data_dir)
+    #source_list = findSignlanguegeFiles(data_dir)
+    source_list = findAllFile(data_dir)
     frame_num = 0
     for source_file in tqdm(source_list):
 
-            source_data = np.load(source_file)[:, body_joints_id+hand_joints_id, :]
-       #try:
+        source_data = np.load(source_file)[:, body_joints_id+hand_joints_id, :]
+        try:
             data, ground_positions, positions, l_velocity = process_file(
                 source_data, 0.002)
+            #print min and max of data
+            print(data.min(), data.max())
             #print(ground_positions)
             rec_ric_data = recover_from_ric(torch.from_numpy(
                 data).unsqueeze(0).float(), joints_num)
@@ -527,9 +531,9 @@ if __name__ == "__main__":
                     rec_ric_data.squeeze().numpy())
             np.save(source_file.replace('joint', 'new_joint_vecs'), data)
             frame_num += data.shape[0]
-        # except Exception as e:
-        #     print(source_file)
-        #     print(e)
+        except Exception as e:
+            print(source_file)
+            print(e)
 
     print('Total clips: %d, Frames: %d, Duration: %fm' %
           (len(source_list), frame_num, frame_num / 20 / 60))

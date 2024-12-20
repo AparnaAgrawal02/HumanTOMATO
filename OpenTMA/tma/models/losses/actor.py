@@ -81,6 +81,7 @@ class ACTORLosses(Metric):
     def _update_loss(self, loss: str, outputs, inputs):
         # Update the loss
         val = self._losses_func[loss](outputs, inputs)
+        print(outputs.shape, inputs.shape,"check shapes")
         getattr(self, loss).__iadd__(val.detach())
         # Return a weighted sum
         weighted_loss = self._params[loss] * val

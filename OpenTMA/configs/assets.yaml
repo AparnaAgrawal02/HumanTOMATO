@@ -35,6 +35,13 @@ DATASET:
     SPLIT_ROOT: /scratch/aparna/BSL_t2m_test_ready
     SEMANTIC_TEXT_ROOT: /scratch/aparna/BSL_t2m_test_ready/texts/semantic_texts
     FACE_TEXT_ROOT: /scratch/aparna/BSL_t2m_test_ready/texts/face
+  
+  ASL:
+    ROOT: /scratch/aparna/ASL_t2m
+    SPLIT_ROOT: /scratch/aparna/ASL_t2m
+    SEMANTIC_TEXT_ROOT: /scratch/aparna/ASL_t2m/texts/semantic_texts
+    FACE_TEXT_ROOT: /scratch/aparna/ASL_t2m/texts/face
+
 
 
 model:
