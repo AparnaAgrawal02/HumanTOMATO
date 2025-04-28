@@ -155,16 +155,15 @@ def get_smplx_322_optimised(data, ex_fps):
 
     for fId in range(0, frame_number, down_sample):
         data_pose = data[fId]
-        pose_root = data_pose['root_pose'].reshape(1, 3)
-    #     rot_mat =  np.array([[-1, 0, 0],
-    #                    [0, -1, 0], 
-    #                    [0, 0, 1]])
+        #pose_root = data_pose['root_pose'].reshape(1, 3)
+        pose_root = np.zeros((1, 3))
+    
     # # Apply rotation to all joints
-    #     pose_root = np.dot(pose_root, rot_mat)
+        pose_root[0][0] = -np.pi
         #move 90 degree
         #pose_root[0,:] = [0, 0, 0]
         # make first 11 0 
-        data_pose['body_pose'][:11] = [0, 0, 0]
+       # data_pose['body_pose'][:11] = [0, 0, 0]
         pose_body = data_pose['body_pose'].reshape(1, 63)
         pose_hand = data_pose['lhand_pose'].reshape(1, 45)
         pose_hand = np.concatenate((pose_hand, data_pose['rhand_pose'].reshape(1, 45)), axis=1)
@@ -172,7 +171,8 @@ def get_smplx_322_optimised(data, ex_fps):
         pose_expression = data_pose['expr'].reshape(1, 50)
         pose_face_shape = np.zeros((1, 100))
         pose_trans = data_pose['trans'].reshape(1, 3)
-        pose_body_shape = np.asarray([[0.421,-1.658,0.361,0.314,0.226,0.065,0.175,-0.150,-0.097,-0.191]])
+        #print(data_pose.keys())
+        pose_body_shape = np.zeros((1,10))      #np.asarray([[0.421,-1.658,0.361,0.314,0.226,0.065,0.175,-0.150,-0.097,-0.191]])
         #print shapes
         print(pose_root.shape, pose_body.shape, pose_hand.shape, pose_jaw.shape, pose_expression.shape, pose_face_shape.shape, pose_trans.shape, pose_body_shape.shape)
         pose = np.concatenate((pose_root, pose_body, pose_hand, pose_jaw, pose_expression, pose_face_shape, pose_trans, pose_body_shape), axis=1)
@@ -203,7 +203,7 @@ for gloss in os.listdir(path):
         continue
     for option in os.listdir(gloss_path):
         option_path = pjoin(gloss_path, option, "smplx_optimized", "smplx_params")
-        if not os.path.isdir(option_path)  or os.path.exists(pjoin(output_path, gloss, option +".npy" )):
+        if not os.path.isdir(option_path):#or os.path.exists(pjoin(output_path, gloss, option +".npy" )):
             continue
         #try:
         data = load_and_smooth(pjoin(gloss_path, option))
