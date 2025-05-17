@@ -76,7 +76,7 @@ model:
   #####
   latent_dim: 256 # latent dimension
   ff_size: 1024 #
-  num_layers: 4 # number of layers
+  num_layers: 6 # number of layers
   num_head: 6 # number of head layers
   dropout: 0.1 # dropout rate
   activation: gelu # activation type

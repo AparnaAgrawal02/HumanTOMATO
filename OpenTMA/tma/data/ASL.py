@@ -75,6 +75,43 @@ class ASL_DataModule(BASEDataModule):
                 root_orient=features[:, :3],
             ).Jtr
             return output.reshape(bs, -1, 55, 3)  # torch.Size([32, 96, 55, 3])
+        elif motion_type == "smplx_322":
+            model_path = "/scratch/aparna/human_model_files/"
+            mean = torch.tensor(self.hparams.mean).to(features)
+            std = torch.tensor(self.hparams.std).to(features)
+            features = features * (std + 1e-7) + mean
+            bs = features.shape[0]
+            features = features.reshape(-1, 322)
+
+            """Convert [T, 322] axis-angle to [T, 55, 3] joint positions"""
+            pose_tensor = torch.tensor(features, dtype=torch.float32).to('cuda')
+            smplx_model = load_smplx_model(model_path=model_path, gender='neutral',device='cuda',batch_size=pose_tensor.shape[0])
+            smplx_model.eval()
+            assert smplx_model is not None
+            pose_tensor = pose_tensor.view(-1, 322)
+            global_orient = pose_tensor[:, :3]
+            body_pose = pose_tensor[:, 3:66]
+            left_hand_pose = pose_tensor[:, 66:111]
+            right_hand_pose = pose_tensor[:, 111:156]
+            jaw_pose = pose_tensor[:, 156:159]
+            expression = pose_tensor[:, 159:209]
+            trans = pose_tensor[:, 309:312]
+            betas = pose_tensor[:, 312:322]
+            
+            output = output = smplx_model(
+                    global_orient=global_orient,
+                    body_pose=body_pose,
+                    left_hand_pose=left_hand_pose,
+                    right_hand_pose=right_hand_pose,
+                    jaw_pose=jaw_pose,
+                    expression=expression,
+                    betas=betas,
+                    transl=trans,
+                    
+                )
+            del smplx_model
+            return output.joints.detach().cpu().numpy().reshape(bs, -1, 144, 3)
+
         else:
             raise NotImplementedError
 

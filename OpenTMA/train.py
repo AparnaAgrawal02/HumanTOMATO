@@ -11,7 +11,7 @@ from tma.config import parse_args
 from tma.data.get_data import get_datasets
 from tma.models.get_model import get_model
 from tma.utils.logger import create_logger
-
+import wandb
 
 def main(wandb_config=None):
     # Parse arguments from command line
@@ -135,7 +135,7 @@ def main(wandb_config=None):
 
     # Define the distributed data parallel strategy
     if len(cfg.DEVICE) > 1:
-        ddp_strategy = "ddp"
+        ddp_strategy = "ddp_find_unused_parameters_true"
     else:
         ddp_strategy = None
 
@@ -164,10 +164,11 @@ def main(wandb_config=None):
 
     # Start training and validation
     if cfg.TRAIN.RESUME:
-        trainer.validate(model, datamodule=datasets[0], ckpt_path=cfg.TRAIN.PRETRAINED)
+        #trainer.validate(model, datamodule=datasets[0], ckpt_path=cfg.TRAIN.PRETRAINED)
         trainer.fit(model, datamodule=datasets[0], ckpt_path=cfg.TRAIN.PRETRAINED)
     else:
-        trainer.validate(model, datamodule=datasets[0])
+        #trainer.validate(model, datamodule=datasets[0])
+       #trainer.fit(model, datamodule=datasets[0], ckpt_path=cfg.TRAIN.PRETRAINED)
         trainer.fit(model, datamodule=datasets[0])
 
     # Log the location of the checkpoints and outputs
@@ -192,6 +193,6 @@ if __name__ == "__main__":
     #         }
     #     }
     # }
-    # sweep_id = wandb.sweep(sweep_config, project="pytorch-sweeps-demo")
+    # sweep_id = wandb.sweep(sweep_config, project="gsl_humantomato")
     # wandb.agent(sweep_id, function=main)
     main()

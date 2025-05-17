@@ -14,13 +14,13 @@ from .utils import *
 from .MotionX import Motion_XDataModule
 from .BSL import BSL_DataModule
 from .ASL import ASL_DataModule
-
+from .GSL import GSL_DataModule
 
 def get_mean_std(phase, cfg, dataset_name):
 
     # todo: use different mean and val for phases
     name = "t2m" if dataset_name == "humanml3d" else dataset_name
-    assert name in ["t2m", "kit", "motionx", "unimocap","BSL",'ASL']
+    assert name in ["t2m", "kit", "motionx", "unimocap","BSL",'ASL','GSL']
     # if phase in ["train", "val", "test"]:
     if name in ["t2m", "kit"]:
         if phase in ["val"]:
@@ -71,20 +71,35 @@ def get_mean_std(phase, cfg, dataset_name):
                 )
             )
     
-    elif name in ["BSL",'ASL']:
+    elif name in ["BSL",'ASL','GSL']:
 
         if phase in ["val"]:
-            data_root = pjoin(
-                cfg.model.t2m_path,
-                name,
-                # cfg.DATASET.VERSION,
-                # cfg.DATASET.MOTION_TYPE,
-                # "Decomp_SP001_SM001_H512",
-                # "meta",
+            data_root = eval(f"cfg.DATASET.{dataset_name.upper()}.ROOT")
+            # data_root = pjoin(
+            #     cfg.model.t2m_path,
+            #     name,
+            #     # cfg.DATASET.VERSION,
+            #     # cfg.DATASET.MOTION_TYPE,
+            #     # "Decomp_SP001_SM001_H512",
+            #     # "meta",
+            # )
+            
+            mean = np.load(
+                pjoin(
+                    data_root,
+                    "smplx_322_mean_std",
+                    "Mean.npy",
+                )
             )
-            print("data_root",data_root)
-            mean = np.load(pjoin(data_root, "mean.npy"))
-            std = np.load(pjoin(data_root, "std.npy"))
+            std = np.load(
+                pjoin(
+                    data_root,
+                    "smplx_322_mean_std",
+                    "Std.npy",
+                )
+            )
+            
+        
             print("mean",mean.shape)
             print("std",std.shape)
 
@@ -93,28 +108,18 @@ def get_mean_std(phase, cfg, dataset_name):
             mean = np.load(
                 pjoin(
                     data_root,
-                    "mean_std",
-                    cfg.DATASET.VERSION,
-                    cfg.DATASET.MOTION_TYPE,
-                    "mean.npy",
+                    "smplx_322_mean_std",
+                    "Mean.npy",
                 )
             )
             std = np.load(
                 pjoin(
                     data_root,
-                    "mean_std",
-                    cfg.DATASET.VERSION,
-                    cfg.DATASET.MOTION_TYPE,
-                    "std.npy",
+                    "smplx_322_mean_std",
+                    "Std.npy",
                 )
             )
-            print(pjoin(
-                    data_root,
-                    "mean_std",
-                    cfg.DATASET.VERSION,
-                    cfg.DATASET.MOTION_TYPE,
-                    "mean.npy",
-                ))
+            
             print("mean",mean.shape)
             print("std",std.shape)
 
@@ -134,13 +139,14 @@ def get_mean_std(phase, cfg, dataset_name):
 
 
 def get_njoints(dataset_name):
+    print(f"dataset_name: {dataset_name}")
     if dataset_name == "humanml3d":
         njoints = 22
     elif dataset_name == "unimocap":
         njoints = 22
     elif dataset_name == "kit":
         njoints = 21
-    elif dataset_name == "motionx" or dataset_name == "bsl" or dataset_name == 'asl':
+    elif dataset_name == "motionx" or dataset_name == "bsl" or dataset_name == 'asl' or dataset_name.lower() == 'gsl':
         njoints = 52
     else:
         raise NotImplementedError
@@ -175,7 +181,7 @@ def reget_mean_std(cfg, dataset_name, mean, std):
             (mean[..., :4], mean[..., 4 + (njoints - 1) * 3 : 4 + (njoints - 1) * 9]),
             axis=0,
         )
-    elif cfg.DATASET.MOTION_TYPE == "vector_263":
+    elif cfg.DATASET.MOTION_TYPE == "vector_263" or cfg.DATASET.MOTION_TYPE == "smplx_322":
         pass
     else:
         raise NotImplementedError
@@ -203,7 +209,8 @@ def reget_mean_std(cfg, dataset_name, mean, std):
             (std[..., :4], std[..., 4 + (njoints - 1) * 3 : 4 + (njoints - 1) * 9]),
             axis=0,
         )
-    elif cfg.DATASET.MOTION_TYPE == "vector_263":
+    elif cfg.DATASET.MOTION_TYPE == "vector_263" or cfg.DATASET.MOTION_TYPE == "smplx_322":
+        print("Alert do we need to do something here?")
         pass
     else:
         raise NotImplementedError
@@ -214,7 +221,7 @@ def reget_mean_std(cfg, dataset_name, mean, std):
 def get_WordVectorizer(cfg, phase, dataset_name):
     # import pdb; pdb.set_trace()
     if phase not in ["text_only"]:
-        if dataset_name.lower() in ["unimocap", "motionx", "humanml3d", "kit","bsl",'asl']:
+        if dataset_name.lower() in ["unimocap", "motionx", "humanml3d", "kit","bsl",'asl','gsl']:
             if cfg.model.eval_text_source == "token":
                 return WordVectorizer(
                     cfg.DATASET.WORD_VERTILIZER_PATH,
@@ -234,7 +241,7 @@ def get_WordVectorizer(cfg, phase, dataset_name):
 
 
 def get_collate_fn(name, cfg, phase="train"):
-    if name.lower() in ["humanml3d", "kit", "motionx", "unimocap", "BSL", 'ASL']:
+    if name.lower() in ["humanml3d", "kit", "motionx", "unimocap", "bsl", 'asl','gsl']:
         if cfg.model.condition in [
             "text_all",
             "text_face",
@@ -262,6 +269,7 @@ dataset_module_map = {
     "unimocap": UniMocapDataModule,
     'bsl': BSL_DataModule,
     'asl': ASL_DataModule,
+    'gsl': GSL_DataModule,
 }
 motion_subdir = {
     "unimocap": "new_joint_vecs",
@@ -269,7 +277,8 @@ motion_subdir = {
     "kit": "new_joint_vecs",
     "motionx": "motion_data",
     "bsl": "new_joint_vecs",
-    "asl": "new_joint_vecs",
+    "asl": "smplx_322",
+    "gsl": "smplx_322_optimised",
 }
 
 
@@ -309,7 +318,7 @@ def get_datasets(cfg, logger=None, phase="train"):
                     w_vectorizer=wordVectorizer,
                     input_format=cfg.DATASET.MOTION_TYPE,
                     text_dir=pjoin(data_root, "texts"),
-                    motion_dir=pjoin(data_root, motion_subdir[dataset_name]),
+                    motion_dir=pjoin(data_root, motion_subdir[dataset_name.lower()]),
                     max_motion_length=cfg.DATASET.SAMPLER.MAX_LEN,
                     min_motion_length=cfg.DATASET.SAMPLER.MIN_LEN,
                     max_text_len=cfg.DATASET.SAMPLER.MAX_TEXT_LEN,
@@ -365,7 +374,7 @@ def get_datasets(cfg, logger=None, phase="train"):
             # todo: add amass dataset
             raise NotImplementedError
 
-        elif dataset_name.lower() in ["motionx", "bsl", "asl"]:
+        elif dataset_name.lower() in ["motionx", "bsl", "asl",'gsl']:
             data_root = eval(f"cfg.DATASET.{dataset_name.upper()}.ROOT")
             # get mean and std corresponding to dataset
             mean, std = get_mean_std(phase, cfg, dataset_name)

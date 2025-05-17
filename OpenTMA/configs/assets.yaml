@@ -29,6 +29,7 @@ DATASET:
     SPLIT_ROOT: ./datasets/Motion-X/split
     SEMANTIC_TEXT_ROOT: ./datasets/Motion-X/texts/semantic_texts
     FACE_TEXT_ROOT: ./datasets/Motion-X/texts/face_texts
+
   
   BSL:
     ROOT: /scratch/aparna/BSL_t2m_test_ready
@@ -37,11 +38,15 @@ DATASET:
     FACE_TEXT_ROOT: /scratch/aparna/BSL_t2m_test_ready/texts/face
   
   ASL:
-    ROOT: /scratch/aparna/ASL_t2m
-    SPLIT_ROOT: /scratch/aparna/ASL_t2m
-    SEMANTIC_TEXT_ROOT: /scratch/aparna/ASL_t2m/texts/semantic_texts
-    FACE_TEXT_ROOT: /scratch/aparna/ASL_t2m/texts/face
-
+    ROOT: /scratch/aparna/datasets/ASL_t2m
+    SPLIT_ROOT: /scratch/aparna/datasets/ASL_t2m
+    SEMANTIC_TEXT_ROOT: /scratch/aparna/datasets/ASL_t2m/texts
+    FACE_TEXT_ROOT: /scratch/aparna/datasets/ASL_t2m/texts/face
+  GSL:
+    ROOT: /scratch/aparna/datasets/GSL_t2m
+    SPLIT_ROOT: /scratch/aparna/datasets/GSL_t2m
+    SEMANTIC_TEXT_ROOT: /scratch/aparna/datasets/GSL_t2m/english_texts
+    FACE_TEXT_ROOT: /scratch/aparna/datasets/GSL_t2m/texts/face
 
 
 model:

@@ -29,7 +29,7 @@ texts= df["SENTENCE"]
 
 aal_file ="/scratch/aparna/ASL_t2m/all.txt"
 for id in range(len(ids)):
-    if ids[id] +".pkl.npy" in os.listdir("/scratch/aparna/ASL_t2m/new_joint_vecs"):
+    if ids[id] +".npy" in os.listdir("/scratch/aparna/ASL_t2m/new_joint_vecs"):
         with open(aal_file, 'a+') as f:
             f.write(ids[id] + '\n')
         os.makedirs(os.path.join(path, "texts"), exist_ok=True)
@@ -47,7 +47,7 @@ ids = df["SENTENCE_NAME"]
 texts= df["SENTENCE"]
 
 for id in range(len(ids)):
-    if ids[id] +".pkl.npy" in os.listdir("/scratch/aparna/ASL_t2m/new_joint_vecs"):
+    if ids[id] +".npy" in os.listdir("/scratch/aparna/ASL_t2m/new_joint_vecs"):
         with open(aal_file, 'a+') as f:
             f.write(ids[id] + '\n')
         os.makedirs(os.path.join(path, "texts"), exist_ok=True)
@@ -64,7 +64,7 @@ ids = df["SENTENCE_NAME"]
 texts= df["SENTENCE"]
 
 for id in range(len(ids)):
-    if ids[id] +".pkl.npy" in os.listdir("/scratch/aparna/ASL_t2m/new_joint_vecs"):
+    if ids[id] +".npy" in os.listdir("/scratch/aparna/ASL_t2m/new_joint_vecs"):
         with open(aal_file, 'a+') as f:
             f.write(ids[id] + '\n')
         os.makedirs(os.path.join(path, "texts"), exist_ok=True)

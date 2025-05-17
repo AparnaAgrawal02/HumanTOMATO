@@ -11,7 +11,7 @@ source activate temos
 
 # python -m train --cfg configs/configs_temos/MotionX-TMR.yaml --cfg_assets configs/assets.yaml --nodebug
 # python -m train --cfg configs/configs_temos/UniMocap-TMR.yaml --cfg_assets configs/assets.yaml --nodebug
-python -m train --cfg configs/configs_temos/H3D-TMR.yaml --cfg_assets configs/assets.yaml --nodebug
+python -m train --cfg configs/configs_temos/GSL-dataset.yaml --cfg_assets configs/assets.yaml --nodebug
 
 
 # find ./  -type d -name "__pycache__" -exec rm -rf {} +

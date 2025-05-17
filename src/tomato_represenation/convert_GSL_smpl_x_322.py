@@ -203,7 +203,7 @@ for gloss in os.listdir(path):
         continue
     for option in os.listdir(gloss_path):
         option_path = pjoin(gloss_path, option, "smplx_optimized", "smplx_params")
-        if not os.path.isdir(option_path):#or os.path.exists(pjoin(output_path, gloss, option +".npy" )):
+        if not os.path.isdir(option_path) or os.path.exists(pjoin(output_path, gloss, option +".npy" )):
             continue
         #try:
         data = load_and_smooth(pjoin(gloss_path, option))

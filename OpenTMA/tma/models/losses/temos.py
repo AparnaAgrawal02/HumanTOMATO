@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torchmetrics import Metric
 from .infonce import InfoNCE
-
+import wandb
 
 class TemosLosses(Metric):
     """
@@ -184,9 +184,11 @@ class TemosLosses(Metric):
 
     def _update_loss(self, loss: str, outputs, inputs):
         # Update the loss
+    
         val = self._losses_func[loss](outputs, inputs)
         getattr(self, loss).__iadd__(val.detach())
         # Return a weighted sum
+        wandb.log({self.loss2logname(loss, "train"): val})
         weighted_loss = self._params[loss] * val
         return weighted_loss
 

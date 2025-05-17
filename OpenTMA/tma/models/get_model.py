@@ -2,6 +2,7 @@ import importlib
 
 
 def get_model(cfg, datamodule, phase="train"):
+    print("Phase: ", phase)
     """
     Inputs:
         cfg (Config): The configuration object containing model details.

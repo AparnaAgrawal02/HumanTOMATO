@@ -17,7 +17,7 @@ from sentence_transformers import SentenceTransformer
 
 from tma.models.architectures import t2m_textenc, t2m_motionenc
 import os
-
+import wandb
 import time
 
 import numpy as np
@@ -28,7 +28,7 @@ from tma.models.architectures.temos.textencoder.distillbert_actor import Distilb
 from tma.models.architectures.temos.motionencoder.actor import ActorAgnosticEncoder
 from collections import OrderedDict
 from transformers import AutoTokenizer, AutoModel
-
+wandb.init(project="temos")
 
 class TEMOS(BaseModel):
     def __init__(self, cfg, datamodule, **kwargs):
@@ -69,7 +69,7 @@ class TEMOS(BaseModel):
             "only_pose_concat",
             "only_pose_fusion",
         ]:
-            self._get_t2m_evaluator(cfg)
+           # self._get_t2m_evaluator(cfg)
             self.feats2joints = datamodule.feats2joints
 
         if cfg.TRAIN.OPTIM.TYPE.lower() == "adamw":
@@ -228,42 +228,42 @@ class TEMOS(BaseModel):
         dataname = cfg.TEST.DATASETS[0]
         dataname = "t2m" if dataname == "humanml3d" else dataname
 
-        if dataname == "motionx":
-            t2m_checkpoint = torch.load(
-                os.path.join(
-                    cfg.model.t2m_path,
-                    dataname,
-                    cfg.DATASET.VERSION,
-                    cfg.DATASET.MOTION_TYPE,
-                    "text_mot_match/model/finest.tar",
-                ),
-                map_location=torch.device("cpu"),
-            )
+        # if dataname == "motionx":
+        #     t2m_checkpoint = torch.load(
+        #         os.path.join(
+        #             cfg.model.t2m_path,
+        #             dataname,
+        #             cfg.DATASET.VERSION,
+        #             cfg.DATASET.MOTION_TYPE,
+        #             "text_mot_match/model/finest.tar",
+        #         ),
+        #         map_location=torch.device("cpu"),
+        #     )
 
-        elif dataname == "BSL" or dataname == "ASL":
-            t2m_checkpoint = torch.load(
-                os.path.join(
-                    cfg.model.t2m_path,
-                    'motionx',
-                    cfg.DATASET.MOTION_TYPE,
-                    "text_mot_match/model/finest.tar",
-                ),
-                map_location=torch.device("cpu"),
-            )
-        else:
-            t2m_checkpoint = torch.load(
-                os.path.join(
-                    cfg.model.t2m_path, dataname, "text_mot_match/model/finest.tar"
-                ),
-                map_location=torch.device("cpu"),
-            )
+        # elif dataname == "BSL" or dataname == "ASL":
+        #     t2m_checkpoint = torch.load(
+        #         os.path.join(
+        #             cfg.model.t2m_path,
+        #             'motionx',
+        #             cfg.DATASET.MOTION_TYPE,
+        #             "text_mot_match/model/finest.tar",
+        #         ),
+        #         map_location=torch.device("cpu"),
+        #     )
+        # else:
+        #     t2m_checkpoint = torch.load(
+        #         os.path.join(
+        #             cfg.model.t2m_path, dataname, "text_mot_match/model/finest.tar"
+        #         ),
+        #         map_location=torch.device("cpu"),
+        #     )
         #print(self.t2m_moveencoder)
-        print(t2m_checkpoint["movement_encoder"])
-        self.t2m_textencoder.load_state_dict(t2m_checkpoint["text_encoder"])
+        # print(t2m_checkpoint["movement_encoder"])
+        # self.t2m_textencoder.load_state_dict(t2m_checkpoint["text_encoder"])
 
-        self.t2m_moveencoder.load_state_dict(t2m_checkpoint["movement_encoder"])
+        # self.t2m_moveencoder.load_state_dict(t2m_checkpoint["movement_encoder"])
 
-        self.t2m_motionencoder.load_state_dict(t2m_checkpoint["motion_encoder"])
+        # self.t2m_motionencoder.load_state_dict(t2m_checkpoint["motion_encoder"])
 
         # Set the T2M text encoder, movement encoder, and motion encoder to evaluation mode and freeze their parameters.
         self.t2m_textencoder.eval()
@@ -276,6 +276,31 @@ class TEMOS(BaseModel):
         for p in self.t2m_motionencoder.parameters():
             p.requires_grad = False
 
+    def on_load_checkpoint(self, checkpoint):
+        state_dict = checkpoint["state_dict"]
+       # print(state_dict.keys())
+        from collections import OrderedDict
+        textencoder_dict = OrderedDict()
+        for k, v in state_dict.items():
+            if k.split(".")[0] == "textencoder":
+                name = k.replace("textencoder.", "")
+                textencoder_dict[name] = v
+        self.textencoder.load_state_dict(textencoder_dict, strict=True)
+
+        motionencoder_dict = OrderedDict()
+        for k, v in state_dict.items():
+            if k.split(".")[0] == "motionencoder":
+                name = k.replace("motionencoder.", "")
+                motionencoder_dict[name] = v
+        self.motionencoder.load_state_dict(motionencoder_dict, strict=True)
+        motiondecoder = OrderedDict()
+        for k, v in state_dict.items():
+            if k.split(".")[0] == "motiondecoder":
+                print(k)
+                name = k.replace("motiondecoder.", "")
+                motiondecoder[name] = v
+        print("T2M Evaluator Model Loaded!")
+        self.motiondecoder.load_state_dict(motiondecoder, strict=True)
     def sample_from_distribution(
         self,
         distribution: Distribution,
@@ -738,107 +763,111 @@ class TEMOS(BaseModel):
         torch.nn.utils.clip_grad_norm_(self.parameters(), 1.0)
 
         print(loss, "loss")
+        wandb.log({"loss": loss})
+
         if loss is None:
             raise ValueError("Loss is None, this happend with torchmetrics > 0.7")
 
         # Compute the metrics - currently evaluate results from text to motion
         # The metrics are computed differently depending on the split and the condition
-        if split in ["val", "test"]:
-            self.save_embeddings(batch)
+        # if split in ["val", "test"]:
+        #     self.save_embeddings(batch)
 
-            if self.condition in [
-                "text",
-                "text_uncond",
-                "text_all",
-                "text_face",
-                "text_body",
-                "text_hand",
-                "text_face_body",
-                "text_seperate",
-                "only_pose_concat",
-                "only_pose_fusion",
-            ]:
-                # use t2m evaluators
-                rs_set = self.t2m_eval(batch)
-            elif self.condition == "action":
-                # use a2m evaluators
-                rs_set = self.a2m_eval(batch)
-            else:
-                raise NotImplementedError
+        #     if self.condition in [
+        #         "text",
+        #         "text_uncond",
+        #         "text_all",
+        #         "text_face",
+        #         "text_body",
+        #         "text_hand",
+        #         "text_face_body",
+        #         "text_seperate",
+        #         "only_pose_concat",
+        #         "only_pose_fusion",
+        #     ]:
+        #         # use t2m evaluators
+        #         rs_set = self.t2m_eval(batch)
+        #     elif self.condition == "action":
+        #         # use a2m evaluators
+        #         rs_set = self.a2m_eval(batch)
+        #     else:
+        #         raise NotImplementedError
 
-            # MultiModality evaluation sperately
-            if self.trainer.datamodule.is_mm:
-                metrics_dicts = ["MMMetrics"]
-            else:
-                metrics_dicts = self.metrics_dict
+        #     # MultiModality evaluation sperately
+        #     if self.trainer.datamodule.is_mm:
+        #         metrics_dicts = ["MMMetrics"]
+        #     else:
+        #         metrics_dicts = self.metrics_dict
 
-            for metric in metrics_dicts:
-                if metric == "TemosMetric":
-                    phase = split if split != "val" else "eval"
-                    if eval(f"self.cfg.{phase.upper()}.DATASETS")[0].lower() not in [
-                        "humanml3d",
-                        "kit",
-                        "motionx",
-                        "unimocap",
-                        'bsl',
-                        'asl',
-                    ]:
-                        raise TypeError(
-                            "APE and AVE metrics only support humanml3d and kit datasets now"
-                        )
+        #     for metric in metrics_dicts:
+        #         if metric == "TemosMetric":
+        #             phase = split if split != "val" else "eval"
+        #             if eval(f"self.cfg.{phase.upper()}.DATASETS")[0].lower() not in [
+        #                 "humanml3d",
+        #                 "kit",
+        #                 "motionx",
+        #                 "unimocap",
+        #                 'bsl',
+        #                 'asl',
+        #                 'gsl'
+        #             ]:
+        #                 raise TypeError(
+        #                     "APE and AVE metrics only support humanml3d and kit datasets now"
+        #                 )
 
-                    getattr(self, metric).update(
-                        rs_set["joints_rst"], rs_set["joints_ref"], batch["length"]
-                    )
-                elif metric == "TM2TMetrics":
-                    getattr(self, metric).update(
-                        rs_set["lat_t"],
-                        rs_set["lat_rm"],
-                        rs_set["lat_m"],
-                        batch["length"],
-                        rs_set["TMR_motion_embedding"],
-                        rs_set["TMR_GT_motion_embedding"],
-                        rs_set["TMR_text_embedding"],
-                    )
-                elif metric == "UncondMetrics":
-                    getattr(self, metric).update(
-                        recmotion_embeddings=rs_set["lat_rm"],
-                        gtmotion_embeddings=rs_set["lat_m"],
-                        lengths=batch["length"],
-                    )
-                elif metric == "MRMetrics":
-                    getattr(self, metric).update(
-                        rs_set["joints_rst"], rs_set["joints_ref"], batch["length"]
-                    )
-                elif metric == "MMMetrics":
-                    getattr(self, metric).update(
-                        rs_set["lat_rm"].unsqueeze(0), batch["length"]
-                    )
-                elif metric == "HUMANACTMetrics":
-                    getattr(self, metric).update(
-                        rs_set["m_action"],
-                        rs_set["joints_eval_rst"],
-                        rs_set["joints_eval_ref"],
-                        rs_set["m_lens"],
-                    )
+        #             getattr(self, metric).update(
+        #                 rs_set["joints_rst"], rs_set["joints_ref"], batch["length"]
+        #             )
+        #         elif metric == "TM2TMetrics":
+        #             getattr(self, metric).update(
+        #                 rs_set["lat_t"],
+        #                 rs_set["lat_rm"],
+        #                 rs_set["lat_m"],
+        #                 batch["length"],
+        #                 rs_set["TMR_motion_embedding"],
+        #                 rs_set["TMR_GT_motion_embedding"],
+        #                 rs_set["TMR_text_embedding"],
+        #             )
+        #         elif metric == "UncondMetrics":
+        #             getattr(self, metric).update(
+        #                 recmotion_embeddings=rs_set["lat_rm"],
+        #                 gtmotion_embeddings=rs_set["lat_m"],
+        #                 lengths=batch["length"],
+        #             )
+        #         elif metric == "MRMetrics":
+        #             getattr(self, metric).update(
+        #                 rs_set["joints_rst"], rs_set["joints_ref"], batch["length"]
+        #             )
+        #         elif metric == "MMMetrics":
+        #             getattr(self, metric).update(
+        #                 rs_set["lat_rm"].unsqueeze(0), batch["length"]
+        #             )
+        #         elif metric == "HUMANACTMetrics":
+        #             getattr(self, metric).update(
+        #                 rs_set["m_action"],
+        #                 rs_set["joints_eval_rst"],
+        #                 rs_set["joints_eval_ref"],
+        #                 rs_set["m_lens"],
+        #             )
 
-                else:
-                    raise TypeError(f"Not support this metric {metric}")
+        #         else:
+        #             raise TypeError(f"Not support this metric {metric}")
 
-        # If the split is "test", return the results depending on the motion type
-        if split in ["test"]:
-            if self.motion_type == "vector_263":
-                return rs_set["joints_rst"], batch["length"], batch["text"]
-            elif self.motion_type == "smplx_212":
-                if self.cfg.TRAIN.use_joints:
-                    return rs_set["m_rst"], batch["length"], rs_set["m_ref"]
-                else:
-                    return batch["length"]
+        # # If the split is "test", return the results depending on the motion type
+        # if split in ["test"]:
+        #     if self.motion_type == "vector_263":
+        #         return rs_set["joints_rst"], batch["length"], batch["text"]
+        #     elif self.motion_type == "smplx_212":
+        #         if self.cfg.TRAIN.use_joints:
+        #             return rs_set["m_rst"], batch["length"], rs_set["m_ref"]
+        #         else:
+        #             return batch["length"]
 
         return loss
 
     def allsplit_epoch_end(self, split: str, outputs):
-
+        if outputs is None:
+            return None
         # Initialize an empty dictionary to store the results
         dico = {}
 
@@ -961,17 +990,21 @@ class TEMOS(BaseModel):
             else:
                 metrics_dicts = self.metrics_dict
             for metric in metrics_dicts:
-                metrics_dict = getattr(self, metric).compute(
-                    sanity_flag=self.trainer.sanity_checking
-                )
-                # reset metrics
-                getattr(self, metric).reset()
-                dico.update(
-                    {
-                        f"Metrics/{metric}": value.item()
-                        for metric, value in metrics_dict.items()
-                    }
-                )
+                try:
+                    metrics_dict = getattr(self, metric).compute(
+                        sanity_flag=self.trainer.sanity_checking
+                    )
+                    # reset metrics
+                    getattr(self, metric).reset()
+                    dico.update(
+                        {
+                            f"Metrics/{metric}": value.item()
+                            for metric, value in metrics_dict.items()
+                        }
+                    )
+                except Exception as e:
+                    print(f"Error in {metric}: {e}")
+                    continue
 
         # If the split is not "test", log the current epoch and step
         if split != "test":
@@ -988,5 +1021,5 @@ class TEMOS(BaseModel):
 
     # This function is called at the end of each training epoch
     # It simply calls the allsplit_epoch_end function with the split set to "train"
-    def training_epoch_end(self, outputs):
+    def on_train_epoch_end(self, outputs=None):
         return self.allsplit_epoch_end("train", outputs)

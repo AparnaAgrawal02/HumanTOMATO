@@ -1,5 +1,5 @@
 import torch
-
+import numpy as np
 
 def lengths_to_mask(lengths):
     max_len = max(lengths)
@@ -57,25 +57,49 @@ def all_collate(batch):
 
 
 # an adapter to our collate func
+# def tma_collate(batch):
+#   #  print("batch", batch[0])   
+#     notnone_batches = [b for b in batch if b is not None]
+#     notnone_batches.sort(key=lambda x: x[3], reverse=True)
+#     # batch.sort(key=lambda x: x[3], reverse=True)
+#     adapted_batch = {
+#         "motion": collate_tensors(
+#             [torch.tensor(b[4]).float() for b in notnone_batches]
+#         ),
+#         "text": [b[2] for b in notnone_batches],
+#         "length": [b[5] for b in notnone_batches],
+#         "word_embs": collate_tensors(
+#             [torch.tensor(b[0]).float() for b in notnone_batches]
+#         ),
+#         "pos_ohot": collate_tensors(
+#             [torch.tensor(b[1]).float() for b in notnone_batches]
+#         ),
+#         "text_len": collate_tensors([torch.tensor(b[3]) for b in notnone_batches]),
+#         "tokens": [b[6] for b in notnone_batches],
+#         "retrieval_name": [b[7] for b in notnone_batches],
+#     }
+#     return adapted_batch
 def tma_collate(batch):
+  #  print("batch", batch[0])   
     notnone_batches = [b for b in batch if b is not None]
-    notnone_batches.sort(key=lambda x: x[3], reverse=True)
+    notnone_batches.sort(key=lambda x: x['text_len'], reverse=True)
     # batch.sort(key=lambda x: x[3], reverse=True)
+   # print(notnone_batches[0].keys())
     adapted_batch = {
         "motion": collate_tensors(
-            [torch.tensor(b[4]).float() for b in notnone_batches]
+            [torch.from_numpy(np.array(b['motion']).astype(np.float32)) for b in notnone_batches]
         ),
-        "text": [b[2] for b in notnone_batches],
-        "length": [b[5] for b in notnone_batches],
+        "text": [b['text'] for b in notnone_batches],
+        "length": [b['length'] for b in notnone_batches],
         "word_embs": collate_tensors(
-            [torch.tensor(b[0]).float() for b in notnone_batches]
+            [torch.tensor(b['word_embs']).float() for b in notnone_batches]
         ),
         "pos_ohot": collate_tensors(
-            [torch.tensor(b[1]).float() for b in notnone_batches]
+            [torch.tensor(b['pos_ohot']).float() for b in notnone_batches]
         ),
-        "text_len": collate_tensors([torch.tensor(b[3]) for b in notnone_batches]),
-        "tokens": [b[6] for b in notnone_batches],
-        "retrieval_name": [b[7] for b in notnone_batches],
+        "text_len": collate_tensors([torch.tensor(b['text_len']) for b in notnone_batches]),
+       # "tokens": [b['tokens'] for b in notnone_batches],
+        "retrieval_name": [b['retrieval_name'] for b in notnone_batches],
     }
     return adapted_batch
 

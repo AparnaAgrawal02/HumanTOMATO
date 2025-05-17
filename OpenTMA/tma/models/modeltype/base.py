@@ -131,39 +131,39 @@ class BaseModel(LightningModule):
                 }
             )
 
-        # If the split is "val" or "test", compute the metrics, reset them, and add them to the dictionary.
-        if split in ["val", "test"]:
+        # # If the split is "val" or "test", compute the metrics, reset them, and add them to the dictionary.
+        # if split in ["val", "test"]:
 
-            if self.trainer.datamodule.is_mm and "TM2TMetrics" in self.metrics_dict:
-                metrics_dicts = ["MMMetrics"]
-            else:
-                metrics_dicts = self.metrics_dict
-            for metric in metrics_dicts:
-                metrics_dict = getattr(self, metric).compute(
-                    sanity_flag=self.trainer.sanity_checking
-                )
-                # reset metrics
-                getattr(self, metric).reset()
-                dico.update(
-                    {
-                        f"Metrics/{metric}": value.item()
-                        for metric, value in metrics_dict.items()
-                    }
-                )
+        #     if self.trainer.datamodule.is_mm and "TM2TMetrics" in self.metrics_dict:
+        #         metrics_dicts = ["MMMetrics"]
+        #     else:
+        #         metrics_dicts = self.metrics_dict
+        #     for metric in metrics_dicts:
+        #         metrics_dict = getattr(self, metric).compute(
+        #             sanity_flag=self.trainer.sanity_checking
+        #         )
+        #         # reset metrics
+        #         getattr(self, metric).reset()
+        #         dico.update(
+        #             {
+        #                 f"Metrics/{metric}": value.item()
+        #                 for metric, value in metrics_dict.items()
+        #             }
+        #         )
 
-        # If the split is not "test", add the current epoch and step to the dictionary.
-        if split != "test":
-            dico.update(
-                {
-                    "epoch": float(self.trainer.current_epoch),
-                    "step": float(self.trainer.current_epoch),
-                }
-            )
+        # # If the split is not "test", add the current epoch and step to the dictionary.
+        # if split != "test":
+        #     dico.update(
+        #         {
+        #             "epoch": float(self.trainer.current_epoch),
+        #             "step": float(self.trainer.current_epoch),
+        #         }
+        #     )
         # don't write sanity check into log
         if not self.trainer.sanity_checking:
             self.log_dict(dico, sync_dist=True, rank_zero_only=True)
 
-    def training_epoch_end(self, outputs):
+    def on_train_epoch_end(self, outputs=None):
         """
         Inputs:
             outputs: The outputs of the training epoch.
@@ -176,7 +176,7 @@ class BaseModel(LightningModule):
         """
         return self.allsplit_epoch_end("train", outputs)
 
-    def validation_epoch_end(self, outputs):
+    def on_validation_epoch_end(self,outputs=None):
         """
         Inputs:
             outputs: The outputs of the validation epoch.
@@ -188,7 +188,6 @@ class BaseModel(LightningModule):
             The result of allsplit_epoch_end.
         """
         return self.allsplit_epoch_end("val", outputs)
-
     def test_epoch_end(self, outputs):
         """
         Inputs:
@@ -201,6 +200,7 @@ class BaseModel(LightningModule):
         Returns:
             The result of allsplit_epoch_end.
         """
+        print(outputs)
         self.save_npy(outputs)
         self.cfg.TEST.REP_I = self.cfg.TEST.REP_I + 1
 
@@ -234,12 +234,12 @@ class BaseModel(LightningModule):
         Returns:
             None.
         """
-        clip_state_dict = self.text_encoder.state_dict()
+        clip_state_dict = self.textencoder.state_dict()
         new_state_dict = OrderedDict()
         for k, v in clip_state_dict.items():
-            new_state_dict["text_encoder." + k] = v
+            new_state_dict["textencoder." + k] = v
         for k, v in checkpoint["state_dict"].items():
-            if "text_encoder" not in k:
+            if "textencoder" not in k:
                 new_state_dict[k] = v
         checkpoint["state_dict"] = new_state_dict
 

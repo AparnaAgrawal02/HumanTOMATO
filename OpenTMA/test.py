@@ -165,6 +165,7 @@ def main():
             logger.info(f"Evaluating MultiModality - Replication {i}")
             datasets.mm_mode(True)
             mm_metrics = trainer.test(model, datamodule=datasets)[0]
+            print("MM metrics", mm_metrics)
             metrics.update(mm_metrics)
             datasets.mm_mode(False)
         for key, item in metrics.items():
